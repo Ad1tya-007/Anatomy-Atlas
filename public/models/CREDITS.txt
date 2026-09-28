@@ -1,0 +1,10 @@
+Open3DModel skeleton
+
+"Open3DModel - Skeleton" by the Open3D project, George J.R. Maat, LUMC, Eungyeol Lee, LUMC, and contributors.
+License: Creative Commons Attribution-ShareAlike (CC BY-SA).
+Source: https://anatomytool.org/open3dmodel
+
+The Open3DModel is based on the predecessor projects BodyParts3D and Z-Anatomy.
+This application does not modify the glTF file. The viewer mirrors right-sided bones to show the left side.
+
+The web application code is separate from the model. If you redistribute the model file, keep this credit and the CC BY-SA license.

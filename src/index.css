@@ -1,0 +1,55 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-bg: #0b0d10;
+  --color-panel: #12161b;
+  --color-panel-2: #181d24;
+  --color-line: #2a313a;
+  --color-text: #f2f4f7;
+  --color-muted: #9aa3ad;
+  --color-faint: #6c7680;
+  --color-accent: #8fb8b2;
+  --color-accent-ink: #08211e;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: #0b0d10;
+}
+
+body {
+  margin: 0;
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #343d48 transparent;
+}
+
+@keyframes atlas-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.atlas-in {
+  animation: atlas-in 220ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-in {
+    animation: none;
+  }
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
