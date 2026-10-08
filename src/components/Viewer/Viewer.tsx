@@ -1,8 +1,12 @@
 import { AnatomyScene } from '@/components/three/AnatomyScene/AnatomyScene'
 import { ModelErrorBoundary } from '@/components/ModelErrorBoundary'
 import { StudyCard } from '@/components/StudyMode/StudyMode'
+import { WalkCard } from '@/components/WalkCard/WalkCard'
 import { ViewerControls } from '@/components/ViewerControls/ViewerControls'
-import { buttonClass } from '@/components/buttonStyles'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
+import { Spinner } from '@/components/ui/spinner'
 import { getBone } from '@/data/bones'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import { useRef } from 'react'
@@ -22,7 +26,7 @@ export function Viewer() {
   return (
     <div
       ref={container}
-      className={`relative min-h-0 min-w-0 flex-1 bg-bg [&:fullscreen]:h-screen [&:fullscreen]:w-screen ${
+      className={`relative min-h-0 min-w-0 flex-1 bg-background [&:fullscreen]:h-screen [&:fullscreen]:w-screen ${
         hoveredBoneId ? '[&_canvas]:cursor-pointer' : ''
       }`}
     >
@@ -34,29 +38,35 @@ export function Viewer() {
       </ModelErrorBoundary>
       {modelState === 'loading' ? (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <p className="text-[15px] text-muted">Preparing the skeleton…</p>
-        </div>
-      ) : null}
-      {modelState === 'error' ? (
-        <div className="absolute inset-0 grid place-items-center px-6 text-center">
-          <div className="max-w-sm">
-            <h2 className="text-[22px] font-medium tracking-tight">Unable to load the 3D skeleton.</h2>
-            <p className="mt-3 text-[15px] leading-6 text-muted">
-              You can still explore the anatomy database using the navigator.
-            </p>
-            <button type="button" className={buttonClass('solid', 'mt-4')} onClick={retryModel}>
-              Retry
-            </button>
+          <div className="flex items-center gap-2 border bg-card/90 px-3 py-2 text-sm text-muted-foreground">
+            <Spinner />
+            Preparing the skeleton…
           </div>
         </div>
       ) : null}
-      {showHover ? (
-        <div className="pointer-events-none absolute top-4 left-4 rounded-full border border-line bg-panel/90 px-3 py-1 text-[13px] text-text">
-          {hoverName}
+      {modelState === 'error' ? (
+        <div className="absolute inset-0 grid place-items-center px-6">
+          <Empty className="max-w-sm border bg-card">
+            <EmptyHeader>
+              <EmptyTitle className="text-lg">Unable to load the 3D skeleton.</EmptyTitle>
+              <EmptyDescription className="text-sm leading-6">
+                You can still explore the anatomy database using the navigator.
+              </EmptyDescription>
+            </EmptyHeader>
+            <Button type="button" onClick={retryModel}>
+              Retry
+            </Button>
+          </Empty>
         </div>
+      ) : null}
+      {showHover ? (
+        <Badge variant="outline" className="pointer-events-none absolute top-4 left-4 h-7 bg-card/90 px-3 text-sm">
+          {hoverName}
+        </Badge>
       ) : null}
       {modelState !== 'error' ? <ViewerControls container={container} /> : null}
       <StudyCard />
+      <WalkCard />
     </div>
   )
 }

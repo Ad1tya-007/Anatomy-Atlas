@@ -1,8 +1,9 @@
+import { Button } from '@/components/ui/button'
 import { getBone } from '@/data/bones'
 import { navRegions } from '@/data/regions'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import type { NavEntry } from '@/types/anatomy'
-import { cn } from '@/utils/cn'
+import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 
@@ -18,13 +19,14 @@ function entryActive(entry: NavEntry, selectedId: string | null, landmarkId: str
 function BoneRow({ entry, depth }: { entry: NavEntry; depth: number }) {
   const selectedBoneId = useAnatomyStore((state) => state.selectedBoneId)
   const selectedLandmarkId = useAnatomyStore((state) => state.selectedLandmarkId)
+  const selectedJointId = useAnatomyStore((state) => state.selectedJointId)
   const studyMode = useAnatomyStore((state) => state.studyMode)
   const studyRevealed = useAnatomyStore((state) => state.studyRevealed)
   const classification = useAnatomyStore((state) => state.classification)
   const selectBone = useAnatomyStore((state) => state.selectBone)
   const [open, setOpen] = useState(depth < 1)
   const hideAnswer = studyMode && !studyRevealed
-  const active = !hideAnswer && entryActive(entry, selectedBoneId, selectedLandmarkId)
+  const active = !hideAnswer && !selectedJointId && entryActive(entry, selectedBoneId, selectedLandmarkId)
   const paired = entry.bones.length === 2
   const folderOnly = entry.bones.length === 0
   const bone = getBone(entry.bones[0] ?? '')
@@ -37,26 +39,29 @@ function BoneRow({ entry, depth }: { entry: NavEntry; depth: number }) {
   }
 
   return (
-    <div className={cn(dimmed && 'opacity-45')}>
-      <div className="flex items-center gap-1 pr-1" style={{ paddingLeft: `${8 + depth * 12}px` }}>
+    <div className={cn(dimmed && 'opacity-40')}>
+      <div className="flex items-center gap-0.5 pr-1" style={{ paddingLeft: `${4 + depth * 12}px` }}>
         {entry.children ? (
-          <button
+          <Button
             type="button"
-            className="grid h-7 w-6 shrink-0 place-items-center rounded text-muted hover:text-text"
+            variant="ghost"
+            size="icon-xs"
             aria-expanded={open}
             aria-label={`${open ? 'Collapse' : 'Expand'} ${entry.label}`}
             onClick={() => setOpen((value) => !value)}
           >
-            {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-          </button>
+            {open ? <ChevronDown /> : <ChevronRight />}
+          </Button>
         ) : (
           <span className="w-6 shrink-0" />
         )}
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           className={cn(
-            'flex h-8 min-w-0 flex-1 items-center rounded-md px-2 text-left text-[13.5px] transition-colors',
-            active ? 'bg-accent/12 text-text' : 'text-text/90 hover:bg-white/[0.04]',
+            'h-8 min-w-0 flex-1 justify-start px-2 font-normal',
+            active && 'bg-primary/15 font-medium text-foreground hover:bg-primary/20',
           )}
           aria-current={active && !paired ? 'true' : undefined}
           onClick={() => {
@@ -68,28 +73,31 @@ function BoneRow({ entry, depth }: { entry: NavEntry; depth: number }) {
             if (entry.children) setOpen(true)
           }}
         >
-          <span className={cn('truncate', active && 'font-medium')}>{entry.label}</span>
+          <span className="truncate">{entry.label}</span>
           {active && !paired ? <span className="sr-only"> selected</span> : null}
-        </button>
+        </Button>
         {paired ? (
-          <span className="flex shrink-0 gap-0.5">
+          <span className="flex shrink-0">
             {(['L', 'R'] as const).map((label, index) => {
               const id = entry.bones[index]
-              const pressed = !hideAnswer && selectedBoneId === id && (!entry.landmarkSuffix || selectedLandmarkId === `${id}_${entry.landmarkSuffix}`)
+              const pressed =
+                !hideAnswer &&
+                !selectedJointId &&
+                selectedBoneId === id &&
+                (!entry.landmarkSuffix || selectedLandmarkId === `${id}_${entry.landmarkSuffix}`)
               return (
-                <button
+                <Button
                   key={label}
                   type="button"
+                  size="icon-xs"
+                  variant={pressed ? 'default' : 'ghost'}
                   aria-label={`${label === 'L' ? 'Left' : 'Right'} ${entry.label}`}
                   aria-pressed={pressed}
-                  className={cn(
-                    'grid h-7 w-7 place-items-center rounded text-[11px] font-medium',
-                    pressed ? 'bg-accent text-accent-ink' : 'text-muted hover:bg-white/[0.06] hover:text-text',
-                  )}
+                  className="font-mono text-[10px]"
                   onClick={() => choose(id)}
                 >
                   {label}
-                </button>
+                </Button>
               )
             })}
           </span>
@@ -112,27 +120,30 @@ export function BoneList() {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
 
   return (
-    <div className="pb-4">
+    <div className="py-2 pr-1 pb-4">
       {navRegions.map((region) => {
         const closed = collapsed[region.id] === true
         return (
-          <section key={region.id} className="mt-3" aria-labelledby={`region-${region.id}`}>
-            <div className="flex items-center px-2">
-              <button
+          <section key={region.id} className="mt-2" aria-labelledby={`region-${region.id}`}>
+            <div className="flex items-center px-1">
+              <Button
                 type="button"
-                className="grid h-7 w-6 place-items-center text-muted hover:text-text"
+                variant="ghost"
+                size="icon-xs"
                 aria-expanded={!closed}
                 aria-label={`${closed ? 'Expand' : 'Collapse'} ${region.label}`}
                 onClick={() => setCollapsed((state) => ({ ...state, [region.id]: !closed }))}
               >
-                {closed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              </button>
-              <button
+                {closed ? <ChevronRight /> : <ChevronDown />}
+              </Button>
+              <Button
                 id={`region-${region.id}`}
                 type="button"
+                variant="ghost"
+                size="sm"
                 className={cn(
-                  'h-7 flex-1 rounded px-1 text-left text-[11px] font-medium tracking-[0.14em] uppercase',
-                  activeRegion === region.id ? 'text-accent' : 'text-faint hover:text-muted',
+                  'kicker h-7 flex-1 justify-start px-1 hover:bg-transparent',
+                  activeRegion === region.id ? 'text-primary!' : 'text-muted-foreground',
                 )}
                 onClick={() => {
                   setCollapsed((state) => ({ ...state, [region.id]: false }))
@@ -140,7 +151,7 @@ export function BoneList() {
                 }}
               >
                 {region.label}
-              </button>
+              </Button>
             </div>
             {closed ? null : (
               <div className="mt-0.5">

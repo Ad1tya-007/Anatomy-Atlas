@@ -1,6 +1,7 @@
+import { Button } from '@/components/ui/button'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import type { Landmark } from '@/types/anatomy'
-import { cn } from '@/utils/cn'
+import { cn } from '@/lib/utils'
 
 export function LandmarkList({ landmarks, boneId }: { landmarks: Landmark[]; boneId: string }) {
   const selectedLandmarkId = useAnatomyStore((state) => state.selectedLandmarkId)
@@ -16,7 +17,7 @@ export function LandmarkList({ landmarks, boneId }: { landmarks: Landmark[]; bon
 
   return (
     <section className="mt-6" aria-labelledby={`landmarks-${boneId}`}>
-      <h3 id={`landmarks-${boneId}`} className="text-[12px] font-medium tracking-[0.14em] text-faint uppercase">
+      <h3 id={`landmarks-${boneId}`} className="kicker">
         Bony landmarks
       </h3>
       <ul className="mt-2">
@@ -24,24 +25,20 @@ export function LandmarkList({ landmarks, boneId }: { landmarks: Landmark[]; bon
           const active = !answerHidden && landmark.id === selectedLandmarkId
           return (
             <li key={landmark.id}>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 aria-current={active ? 'true' : undefined}
                 className={cn(
-                  'flex w-full items-start gap-2 rounded-md px-2 py-2 text-left transition-colors',
-                  active ? 'bg-accent/10' : 'hover:bg-white/[0.04]',
+                  'h-auto w-full justify-start gap-2 px-2 py-2 text-left font-normal whitespace-normal',
+                  active && 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
                 )}
                 onClick={() => selectLandmark(landmark.id)}
               >
-                <span
-                  className={cn('mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full', active ? 'bg-accent' : 'bg-faint')}
-                  aria-hidden
-                />
-                <span>
-                  <span className={cn('block text-[14px]', active ? 'text-accent' : 'text-text')}>{landmark.name}</span>
-                  {active ? <span className="sr-only"> selected</span> : null}
-                </span>
-              </button>
+                <span className={cn('size-1.5 shrink-0', active ? 'bg-primary' : 'bg-muted-foreground')} aria-hidden />
+                <span className="text-sm">{landmark.name}</span>
+                {active ? <span className="sr-only"> selected</span> : null}
+              </Button>
             </li>
           )
         })}

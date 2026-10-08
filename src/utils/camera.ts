@@ -38,6 +38,32 @@ export function boundsForBone(index: SkeletonIndex, boneId: string): THREE.Box3 
   return found ? box : null
 }
 
+export function computeGroupFocus(
+  index: SkeletonIndex,
+  boneIds: string[],
+  primaryId: string,
+  margin = 1,
+): { position: Vec3; target: Vec3 } | null {
+  const box = new THREE.Box3()
+  let found = false
+  for (const id of boneIds) {
+    const part = boundsForBone(index, id)
+    if (!part) continue
+    box.union(part)
+    found = true
+  }
+  if (!found) return null
+  const size = box.getSize(new THREE.Vector3())
+  const radius = Math.max(size.x, size.y, size.z)
+  const distance = THREE.MathUtils.clamp((radius * 2.5 + 0.12) * margin, 0.32, 4.6)
+  const target = box.getCenter(new THREE.Vector3())
+  const position = target.clone().add(viewDirection(primaryId).multiplyScalar(distance))
+  return {
+    position: position.toArray() as Vec3,
+    target: target.toArray() as Vec3,
+  }
+}
+
 export function computeFocus(
   index: SkeletonIndex,
   boneId: string,

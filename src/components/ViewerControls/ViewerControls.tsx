@@ -1,17 +1,40 @@
-import { buttonClass } from '@/components/buttonStyles'
+import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Kbd } from '@/components/ui/kbd'
+import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import type { CameraPresetName } from '@/types/anatomy'
 import { Maximize2, Minimize2 } from 'lucide-react'
-import { useEffect, useState, type RefObject } from 'react'
+import { useEffect, useState, type ReactNode, type RefObject } from 'react'
 
-const VIEWS: Array<{ id: CameraPresetName; label: string }> = [
-  { id: 'default', label: 'Reset' },
-  { id: 'front', label: 'Front' },
-  { id: 'back', label: 'Back' },
+const VIEWS: Array<{ id: CameraPresetName; label: string; shortcut?: string }> = [
+  { id: 'default', label: 'Reset', shortcut: 'R' },
+  { id: 'front', label: 'Front', shortcut: 'F' },
+  { id: 'back', label: 'Back', shortcut: 'B' },
   { id: 'left', label: 'Left' },
   { id: 'right', label: 'Right' },
   { id: 'top', label: 'Top' },
 ]
+
+function Hint({ label, shortcut, children }: { label: string; shortcut?: string; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>
+        {label}
+        {shortcut ? <Kbd>{shortcut}</Kbd> : null}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
 
 export function ViewerControls({ container }: { container: RefObject<HTMLDivElement | null> }) {
   const requestPreset = useAnatomyStore((state) => state.requestPreset)
@@ -42,64 +65,62 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 flex flex-col items-center gap-2 px-3">
-      <p className="pointer-events-none hidden text-[11px] text-faint sm:block">
-        Drag to rotate · Scroll or pinch to zoom · Right-drag to pan
-      </p>
-      <div className="pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-lg border border-line bg-panel/95 p-1">
-        {VIEWS.map((view) => (
-          <button
-            key={view.id}
+      <p className="kicker pointer-events-none hidden sm:block">Drag rotate · scroll zoom · right-drag pan</p>
+      <div className="pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto border bg-card/95 p-1 backdrop-blur-sm">
+        <ButtonGroup>
+          {VIEWS.map((view) => (
+            <Hint key={view.id} label={view.id === 'default' ? 'Reset camera' : `${view.label} view`} shortcut={view.shortcut}>
+              <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => requestPreset(view.id)}>
+                {view.label}
+              </Button>
+            </Hint>
+          ))}
+        </ButtonGroup>
+        <Separator orientation="vertical" className="mx-1 h-4" />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="ghost" size="sm" className="shrink-0">
+              Visibility
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-44">
+            <DropdownMenuLabel>Skeleton layers</DropdownMenuLabel>
+            <DropdownMenuCheckboxItem checked={showBones} onCheckedChange={(value) => setShowBones(value === true)}>
+              Bones
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem checked={showLabels} onCheckedChange={(value) => setShowLabels(value === true)}>
+              Labels
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem checked={showLandmarks} onCheckedChange={(value) => setShowLandmarks(value === true)}>
+              Landmarks
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Hint label={isolated ? 'Show the full skeleton' : 'Isolate the selection'} shortcut="I">
+          <Button
             type="button"
-            className={buttonClass('quiet', 'shrink-0 px-2')}
-            onClick={() => requestPreset(view.id)}
+            variant="ghost"
+            size="sm"
+            className="shrink-0"
+            disabled={!selectedBoneId}
+            onClick={() => (isolated ? clearIsolation() : toggleIsolate())}
           >
-            {view.id === 'default' ? 'Reset' : view.label}
-          </button>
-        ))}
-        <span className="mx-1 h-4 w-px shrink-0 bg-line" aria-hidden />
-        <details className="relative shrink-0">
-          <summary className={buttonClass('quiet', 'cursor-pointer list-none px-2')}>Visibility</summary>
-          <fieldset className="absolute bottom-full left-0 z-20 mb-2 w-44 rounded-md border border-line bg-panel p-2">
-            <legend className="sr-only">Skeleton visibility</legend>
-            <VisibilityOption label="Bones" checked={showBones} onChange={setShowBones} />
-            <VisibilityOption label="Labels" checked={showLabels} onChange={setShowLabels} />
-            <VisibilityOption label="Landmarks" checked={showLandmarks} onChange={setShowLandmarks} />
-          </fieldset>
-        </details>
-        <button
-          type="button"
-          className={buttonClass('quiet', 'shrink-0 px-2')}
-          disabled={!selectedBoneId}
-          onClick={() => (isolated ? clearIsolation() : toggleIsolate())}
-        >
-          {isolated ? 'Full skeleton' : 'Isolate'}
-        </button>
-        <button
-          type="button"
-          className={buttonClass('ghost', 'h-8 w-8 shrink-0 px-0')}
-          aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-          onClick={toggleFullscreen}
-        >
-          {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-        </button>
+            {isolated ? 'Full skeleton' : 'Isolate'}
+          </Button>
+        </Hint>
+        <Hint label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            className="shrink-0"
+            aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            onClick={toggleFullscreen}
+          >
+            {fullscreen ? <Minimize2 /> : <Maximize2 />}
+          </Button>
+        </Hint>
       </div>
     </div>
-  )
-}
-
-function VisibilityOption({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string
-  checked: boolean
-  onChange: (value: boolean) => void
-}) {
-  return (
-    <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 text-[13px] hover:bg-white/[0.04]">
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
-      {label}
-    </label>
   )
 }

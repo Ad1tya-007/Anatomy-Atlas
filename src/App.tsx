@@ -3,30 +3,38 @@ import { AnatomySidebar } from '@/components/AnatomySidebar/AnatomySidebar'
 import { Header } from '@/components/Header/Header'
 import { HelpDialog } from '@/components/HelpDialog/HelpDialog'
 import { Viewer } from '@/components/Viewer/Viewer'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useAnatomyStore } from '@/store/anatomyStore'
+import { Info, ListTree } from 'lucide-react'
 
 function MobileBar() {
   const panel = useAnatomyStore((state) => state.mobilePanel)
   const setMobilePanel = useAnatomyStore((state) => state.setMobilePanel)
   return (
-    <div className="grid shrink-0 grid-cols-2 border-t border-line bg-panel lg:hidden">
-      <button
+    <div className="relative z-[60] grid shrink-0 grid-cols-2 border-t bg-card lg:hidden">
+      <Button
         type="button"
-        className={`h-12 text-[14px] ${panel === 'nav' ? 'text-accent' : 'text-muted'}`}
+        variant={panel === 'nav' ? 'secondary' : 'ghost'}
+        className="h-12 rounded-none"
         aria-pressed={panel === 'nav'}
         onClick={() => setMobilePanel(panel === 'nav' ? 'none' : 'nav')}
       >
-        Explore bones
-      </button>
-      <button
+        <ListTree />
+        Navigator
+      </Button>
+      <Button
         type="button"
-        className={`h-12 border-l border-line text-[14px] ${panel === 'info' ? 'text-accent' : 'text-muted'}`}
+        variant={panel === 'info' ? 'secondary' : 'ghost'}
+        className="h-12 rounded-none border-l"
         aria-pressed={panel === 'info'}
         onClick={() => setMobilePanel(panel === 'info' ? 'none' : 'info')}
       >
-        Bone info
-      </button>
+        <Info />
+        Details
+      </Button>
     </div>
   )
 }
@@ -34,36 +42,51 @@ function MobileBar() {
 function MobileDrawers() {
   const panel = useAnatomyStore((state) => state.mobilePanel)
   const setMobilePanel = useAnatomyStore((state) => state.setMobilePanel)
-  if (panel === 'none') return null
   return (
-    <div className="fixed inset-0 z-40 lg:hidden">
-      <button type="button" className="absolute inset-0 bg-black/50" aria-label="Close panel" onClick={() => setMobilePanel('none')} />
-      <div className="absolute inset-x-0 bottom-12 top-16 overflow-hidden border-t border-line bg-panel">
-        {panel === 'nav' ? <AnatomySidebar className="flex h-full" /> : <AnatomyInfoPanel className="flex h-full" />}
-      </div>
-    </div>
+    <>
+      <Sheet open={panel === 'nav'} onOpenChange={(open) => setMobilePanel(open ? 'nav' : 'none')}>
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          className="top-14 bottom-12 h-auto max-h-none gap-0 p-0"
+        >
+          <AnatomySidebar className="flex h-full" />
+        </SheetContent>
+      </Sheet>
+      <Sheet open={panel === 'info'} onOpenChange={(open) => setMobilePanel(open ? 'info' : 'none')}>
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          className="top-14 bottom-12 h-auto max-h-none gap-0 p-0"
+        >
+          <AnatomyInfoPanel className="flex h-full" />
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }
 
 export default function App() {
   useKeyboardShortcuts()
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-bg font-sans text-text">
-      <a
-        href="#bone-info"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-panel focus:px-3 focus:py-2"
-      >
-        Skip to bone details
-      </a>
-      <Header />
-      <div className="flex min-h-0 flex-1">
-        <AnatomySidebar className="hidden w-[18.75rem] shrink-0 lg:flex" />
-        <Viewer />
-        <AnatomyInfoPanel id="bone-info" className="hidden w-[22.5rem] shrink-0 border-l lg:flex" />
+    <TooltipProvider>
+      <div className="flex h-dvh flex-col overflow-hidden bg-background font-sans text-foreground">
+        <a
+          href="#bone-info"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:bg-card focus:px-3 focus:py-2"
+        >
+          Skip to bone details
+        </a>
+        <Header />
+        <div className="flex min-h-0 flex-1">
+          <AnatomySidebar className="hidden w-[19.5rem] shrink-0 lg:flex" />
+          <Viewer />
+          <AnatomyInfoPanel id="bone-info" className="hidden w-[23rem] shrink-0 border-l lg:flex" />
+        </div>
+        <MobileBar />
+        <MobileDrawers />
+        <HelpDialog />
       </div>
-      <MobileBar />
-      <MobileDrawers />
-      <HelpDialog />
-    </div>
+    </TooltipProvider>
   )
 }

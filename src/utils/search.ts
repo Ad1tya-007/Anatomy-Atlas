@@ -1,16 +1,20 @@
 import { bones } from '@/data/bones'
+import { joints } from '@/data/joints'
 import { allLandmarks } from '@/data/landmarks'
 import { navRegions } from '@/data/regions'
+import { walks } from '@/data/walks'
 import { CLASS_LABEL, REGION_LABEL } from '@/data/labels'
 
 export interface SearchResult {
   id: string
-  kind: 'bone' | 'landmark' | 'region'
+  kind: 'bone' | 'landmark' | 'region' | 'joint' | 'walk'
   title: string
   subtitle: string
   boneId?: string
   landmarkId?: string
   regionId?: string
+  jointId?: string
+  walkId?: string
   score: number
 }
 
@@ -64,6 +68,36 @@ export function searchAnatomy(rawQuery: string): SearchResult[] {
     }
   }
 
+  for (const joint of joints) {
+    const fields = [joint.name, ...joint.alternateNames]
+    let best = 0
+    for (const field of fields) best = Math.max(best, scoreText(query, field))
+    if (best > 0) {
+      results.push({
+        id: `joint:${joint.id}`,
+        kind: 'joint',
+        title: joint.name,
+        subtitle: `Joint · ${REGION_LABEL[joint.region]}`,
+        jointId: joint.id,
+        score: best,
+      })
+    }
+  }
+
+  for (const walk of walks) {
+    const best = scoreText(query, walk.title)
+    if (best > 0) {
+      results.push({
+        id: `walk:${walk.id}`,
+        kind: 'walk',
+        title: walk.title,
+        subtitle: 'Guided walk',
+        walkId: walk.id,
+        score: best,
+      })
+    }
+  }
+
   for (const record of allLandmarks) {
     const score = Math.max(scoreText(query, record.landmark.name), scoreText(query, record.landmark.id.replaceAll('_', ' ')))
     if (score === 0) continue
@@ -78,6 +112,23 @@ export function searchAnatomy(rawQuery: string): SearchResult[] {
     })
   }
 
-  results.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
-  return results.slice(0, 10)
+  const ranked = rankResults(results)
+  return ranked.slice(0, 10)
+}
+
+function rankResults(results: SearchResult[]): SearchResult[] {
+  const byScore = (a: SearchResult, b: SearchResult) => b.score - a.score || a.title.localeCompare(b.title)
+  const exact = results.filter((result) => result.score === 100 && result.kind !== 'walk').sort(byScore)
+  const exactWalks = results.filter((result) => result.score === 100 && result.kind === 'walk').sort(byScore)
+  const featured = results
+    .filter((result) => result.score >= 82 && result.score < 100 && (result.kind === 'joint' || result.kind === 'walk'))
+    .sort(byScore)
+  const rest = results
+    .filter((result) => result.score < 100 && !(result.score >= 82 && (result.kind === 'joint' || result.kind === 'walk')))
+    .sort((a, b) => b.score - a.score || kindRank(a.kind) - kindRank(b.kind) || a.title.localeCompare(b.title))
+  return [...exact, ...exactWalks, ...featured, ...rest]
+}
+
+function kindRank(kind: SearchResult['kind']): number {
+  return kind === 'walk' ? 1 : 0
 }

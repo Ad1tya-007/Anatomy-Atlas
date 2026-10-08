@@ -1,7 +1,18 @@
+import { Badge } from '@/components/ui/badge'
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
+import { Kbd } from '@/components/ui/kbd'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import { searchAnatomy, type SearchResult } from '@/utils/search'
 import { Search, X } from 'lucide-react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
+
+const KIND_LABEL: Record<SearchResult['kind'], string> = {
+  bone: 'Bone',
+  landmark: 'Landmark',
+  region: 'Region',
+  joint: 'Joint',
+  walk: 'Walk',
+}
 
 export function SearchField() {
   const [query, setQuery] = useState('')
@@ -11,6 +22,8 @@ export function SearchField() {
   const listId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const selectBone = useAnatomyStore((state) => state.selectBone)
+  const selectJoint = useAnatomyStore((state) => state.selectJoint)
+  const startWalk = useAnatomyStore((state) => state.startWalk)
   const frameRegion = useAnatomyStore((state) => state.frameRegion)
   const results = useMemo(() => searchAnatomy(query), [query])
 
@@ -28,6 +41,8 @@ export function SearchField() {
 
   const choose = (result: SearchResult) => {
     if (result.kind === 'region' && result.regionId) frameRegion(result.regionId)
+    else if (result.kind === 'joint' && result.jointId) selectJoint(result.jointId)
+    else if (result.kind === 'walk' && result.walkId) startWalk(result.walkId)
     else if (result.boneId) selectBone(result.boneId, { landmarkId: result.landmarkId ?? null })
     setOpen(false)
     setQuery('')
@@ -36,63 +51,64 @@ export function SearchField() {
   return (
     <div ref={rootRef} className="relative w-full">
       <label htmlFor={inputId} className="sr-only">
-        Search bones
+        Search bones, joints, landmarks, and walks
       </label>
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" aria-hidden />
-      <input
-        id={inputId}
-        role="combobox"
-        aria-expanded={open && results.length > 0}
-        aria-controls={listId}
-        aria-autocomplete="list"
-        value={query}
-        placeholder="Search bones..."
-        onChange={(event) => {
-          setQuery(event.target.value)
-          setOpen(true)
-        }}
-        onFocus={() => setOpen(true)}
-        onKeyDown={(event) => {
-          if (event.key === 'ArrowDown') {
-            event.preventDefault()
+      <InputGroup className="h-9 bg-background">
+        <InputGroupAddon>
+          <Search />
+        </InputGroupAddon>
+        <InputGroupInput
+          id={inputId}
+          role="combobox"
+          aria-expanded={open && query.trim().length > 0}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          value={query}
+          data-anatomy-search=""
+          placeholder="Search bones, joints, walks…"
+          className="h-9 text-sm"
+          onChange={(event) => {
+            setQuery(event.target.value)
             setOpen(true)
-            setActive((index) => Math.min(index + 1, Math.max(results.length - 1, 0)))
-          } else if (event.key === 'ArrowUp') {
-            event.preventDefault()
-            setActive((index) => Math.max(index - 1, 0))
-          } else if (event.key === 'Enter' && results[active]) {
-            event.preventDefault()
-            choose(results[active]!)
-          } else if (event.key === 'Escape') {
-            setOpen(false)
-            event.currentTarget.blur()
-          }
-        }}
-        className="h-9 w-full rounded-md border border-line bg-bg/70 pr-8 pl-9 text-[14px] text-text outline-none placeholder:text-faint focus:border-accent/70"
-      />
-      {query ? (
-        <button
-          type="button"
-          className="absolute right-1.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-muted hover:text-text"
-          aria-label="Clear search"
-          onClick={() => {
-            setQuery('')
-            setOpen(false)
           }}
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      ) : null}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowDown') {
+              event.preventDefault()
+              setOpen(true)
+              setActive((index) => Math.min(index + 1, Math.max(results.length - 1, 0)))
+            } else if (event.key === 'ArrowUp') {
+              event.preventDefault()
+              setActive((index) => Math.max(index - 1, 0))
+            } else if (event.key === 'Enter' && results[active]) {
+              event.preventDefault()
+              choose(results[active]!)
+            } else if (event.key === 'Escape') {
+              setOpen(false)
+              event.currentTarget.blur()
+            }
+          }}
+        />
+        <InputGroupAddon align="inline-end">
+          {query ? (
+            <InputGroupButton size="icon-xs" aria-label="Clear search" onClick={() => { setQuery(''); setOpen(false) }}>
+              <X />
+            </InputGroupButton>
+          ) : (
+            <Kbd>J</Kbd>
+          )}
+        </InputGroupAddon>
+      </InputGroup>
       {open && query.trim() ? (
         <div
           id={listId}
           role="listbox"
-          className="absolute top-[calc(100%+6px)] z-40 max-h-80 w-full overflow-auto rounded-md border border-line bg-panel py-1 shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
+          className="absolute top-[calc(100%+6px)] z-40 max-h-80 w-full overflow-auto border bg-popover py-1 text-popover-foreground shadow-md"
         >
           {results.length === 0 ? (
-            <p className="px-3 py-3 text-[13px] leading-5 text-muted">
+            <p className="px-3 py-3 text-sm leading-5 text-muted-foreground">
               No anatomy structures found.
-              <span className="mt-1 block text-faint">Try searching for a bone, region, or landmark.</span>
+              <span className="mt-1 block text-xs">Try a bone, region, joint, landmark, or walk.</span>
             </p>
           ) : (
             results.map((result, index) => (
@@ -101,14 +117,19 @@ export function SearchField() {
                 type="button"
                 role="option"
                 aria-selected={index === active}
-                className={`flex w-full flex-col items-start px-3 py-2 text-left ${
-                  index === active ? 'bg-white/[0.05]' : 'hover:bg-white/[0.04]'
+                className={`flex w-full items-center gap-3 px-3 py-2 text-left ${
+                  index === active ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/70'
                 }`}
                 onMouseEnter={() => setActive(index)}
                 onClick={() => choose(result)}
               >
-                <span className="text-[14px] text-text">{result.title}</span>
-                <span className="text-[12px] text-muted">{result.subtitle}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-foreground">{result.title}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{result.subtitle}</span>
+                </span>
+                <Badge variant="outline" className="font-mono tracking-wide">
+                  {KIND_LABEL[result.kind]}
+                </Badge>
               </button>
             ))
           )}

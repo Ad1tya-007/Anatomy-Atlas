@@ -1,8 +1,9 @@
 import type { ResolvedMarker, SkeletonIndex } from '@/components/three/skeletonIndex'
 import { getBone } from '@/data/bones'
+import { getJoint, jointLandmarkIds } from '@/data/joints'
 import { getLandmark } from '@/data/landmarks'
 import { useAnatomyStore } from '@/store/anatomyStore'
-import { highlightedIds } from '@/utils/anatomy'
+import { selectionHighlight } from '@/utils/anatomy'
 import { Html } from '@react-three/drei'
 import { useMemo, useState } from 'react'
 import { Vector3 } from 'three'
@@ -80,6 +81,9 @@ function Marker({
 export function LandmarkLayer({ index }: { index: SkeletonIndex }) {
   const selectedBoneId = useAnatomyStore((state) => state.selectedBoneId)
   const selectedLandmarkId = useAnatomyStore((state) => state.selectedLandmarkId)
+  const selectedJointId = useAnatomyStore((state) => state.selectedJointId)
+  const jointSide = useAnatomyStore((state) => state.jointSide)
+  const compareSides = useAnatomyStore((state) => state.compareSides)
   const showLandmarks = useAnatomyStore((state) => state.showLandmarks)
   const showLabels = useAnatomyStore((state) => state.showLabels)
   const studyMode = useAnatomyStore((state) => state.studyMode)
@@ -91,10 +95,12 @@ export function LandmarkLayer({ index }: { index: SkeletonIndex }) {
   if (!showLandmarks || !selectedBoneId) return null
   if (studyMode && !studyRevealed && studyKind === 'bone') return null
 
-  const highlighted = highlightedIds(selectedBoneId)
-  const markers = index.markers.filter(
-    (marker) => highlighted.has(marker.boneId) || marker.boneId === selectedBoneId,
-  )
+  const highlight = selectionHighlight({ selectedBoneId, selectedJointId, jointSide, compareSides })
+  const joint = getJoint(selectedJointId)
+  const allowed = joint ? new Set(jointLandmarkIds(joint, jointSide ?? 'left')) : null
+  let markers = index.markers.filter((marker) => highlight.selectedIds.has(marker.boneId))
+  if (allowed) markers = markers.filter((marker) => allowed.has(marker.landmarkId))
+  else if (compareSides && selectedBoneId) markers = markers.filter((marker) => marker.boneId === selectedBoneId)
   const visible =
     studyMode && !studyRevealed && studyKind === 'landmark'
       ? markers.filter((marker) => marker.landmarkId === studyLandmarkId)
@@ -121,12 +127,13 @@ export function LandmarkLayer({ index }: { index: SkeletonIndex }) {
 
 export function BoneLabel({ index }: { index: SkeletonIndex }) {
   const selectedBoneId = useAnatomyStore((state) => state.selectedBoneId)
+  const selectedJointId = useAnatomyStore((state) => state.selectedJointId)
   const showLabels = useAnatomyStore((state) => state.showLabels)
   const studyMode = useAnatomyStore((state) => state.studyMode)
   const studyRevealed = useAnatomyStore((state) => state.studyRevealed)
   const studyKind = useAnatomyStore((state) => state.studyKind)
 
-  if (!showLabels || !selectedBoneId) return null
+  if (!showLabels || !selectedBoneId || selectedJointId) return null
   if (studyMode && !studyRevealed && studyKind === 'bone') return null
 
   const bone = getBone(selectedBoneId)

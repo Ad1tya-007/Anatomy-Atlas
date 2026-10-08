@@ -97,7 +97,42 @@ export type ModelState = 'loading' | 'ready' | 'error'
 
 export type MobilePanel = 'none' | 'nav' | 'info'
 
+export interface Joint {
+  id: string
+  name: string
+  alternateNames: string[]
+  region: AnatomicalRegion
+  description: string
+  movements: string[]
+  /** Bone ids for the left side, or the real ids of a midline joint. */
+  bones: string[]
+  /** Landmark ids that already exist on those bones. */
+  landmarks: string[]
+}
+
+export interface WalkStop {
+  boneId: string
+  landmarkId?: string
+  jointId?: string
+  text: string
+}
+
+export interface Walk {
+  id: string
+  title: string
+  summary: string
+  stops: WalkStop[]
+}
+
+export type StudyScope = 'all' | 'region' | 'classification'
+
+export type StudyAnswerMode = 'reveal' | 'choice' | 'type'
+
+export type StudyResult = 'correct' | 'incorrect'
+
 export interface SelectBoneOptions {
   landmarkId?: string | null
   fromStudy?: boolean
+  /** Walk steps keep the walk active. Every other selection leaves it. */
+  keepWalk?: boolean
 }
