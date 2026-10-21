@@ -126,7 +126,11 @@ export interface Walk {
 
 export type StudyScope = 'all' | 'region' | 'classification'
 
-export type StudyAnswerMode = 'reveal' | 'choice' | 'type'
+export type StudyAnswerMode = 'reveal' | 'choice' | 'type' | 'locate'
+
+export type LookName = 'atlas' | 'ivory' | 'radiograph'
+
+export type SectionAxis = 'off' | 'sagittal' | 'coronal' | 'transverse'
 
 export type StudyResult = 'correct' | 'incorrect'
 

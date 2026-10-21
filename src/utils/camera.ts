@@ -1,5 +1,6 @@
 import { getBone } from '@/data/bones'
 import { REGION_FOCUS } from '@/data/regions'
+import { spreadOffset } from '@/utils/spread'
 import type { CameraPresetName, Vec3 } from '@/types/anatomy'
 import * as THREE from 'three'
 import type { SkeletonIndex } from '@/components/three/skeletonIndex'
@@ -38,16 +39,27 @@ export function boundsForBone(index: SkeletonIndex, boneId: string): THREE.Box3 
   return found ? box : null
 }
 
+function shiftedBounds(index: SkeletonIndex, boneId: string, spread: number): THREE.Box3 | null {
+  const box = boundsForBone(index, boneId)
+  if (!box) return null
+  if (spread === 0) return box
+  const bone = getBone(boneId)
+  const next = box.clone()
+  if (bone) next.translate(new THREE.Vector3(...spreadOffset(bone, spread)))
+  return next
+}
+
 export function computeGroupFocus(
   index: SkeletonIndex,
   boneIds: string[],
   primaryId: string,
   margin = 1,
+  spread = 0,
 ): { position: Vec3; target: Vec3 } | null {
   const box = new THREE.Box3()
   let found = false
   for (const id of boneIds) {
-    const part = boundsForBone(index, id)
+    const part = shiftedBounds(index, id, spread)
     if (!part) continue
     box.union(part)
     found = true
@@ -68,8 +80,9 @@ export function computeFocus(
   index: SkeletonIndex,
   boneId: string,
   landmarkId: string | null,
+  spread = 0,
 ): { position: Vec3; target: Vec3 } | null {
-  const box = boundsForBone(index, boneId)
+  const box = shiftedBounds(index, boneId, spread)
   if (!box) return null
   const size = box.getSize(new THREE.Vector3())
   const radius = Math.max(size.x, size.y, size.z)
@@ -79,7 +92,9 @@ export function computeFocus(
   if (landmarkId) {
     const marker = index.markers.find((item) => item.landmarkId === landmarkId)
     if (marker) {
-      target = new THREE.Vector3(...marker.position)
+      const bone = getBone(boneId)
+      const offset = bone ? spreadOffset(bone, spread) : [0, 0, 0]
+      target = new THREE.Vector3(marker.position[0] + offset[0], marker.position[1] + offset[1], marker.position[2] + offset[2])
       distance = THREE.MathUtils.clamp(distance * 0.58, 0.2, 1.4)
     }
   }

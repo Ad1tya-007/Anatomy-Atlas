@@ -51,6 +51,16 @@ function normalize(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
+function scopeLabel(
+  scope: StudyScope,
+  regionId: AnatomicalRegion | null,
+  classification: BoneClassification | null,
+): string {
+  if (scope === 'region') return navRegions.find((region) => region.id === regionId)?.label ?? 'Region'
+  if (scope === 'classification') return CLASS_LABEL[classification ?? 'long']
+  return 'All'
+}
+
 export function StudyCard() {
   const studyMode = useAnatomyStore((state) => state.studyMode)
   const studyKind = useAnatomyStore((state) => state.studyKind)
@@ -67,6 +77,7 @@ export function StudyCard() {
   const fallback = useAnatomyStore((state) => state.studyScopeFallback)
   const picked = useAnatomyStore((state) => state.studyPicked)
   const result = useAnatomyStore((state) => state.studyResult)
+  const locateNarrowed = useAnatomyStore((state) => state.studyLocateNarrowed)
   const revealStudy = useAnatomyStore((state) => state.revealStudy)
   const nextStudy = useAnatomyStore((state) => state.nextStudy)
   const exitStudy = useAnatomyStore((state) => state.exitStudy)
@@ -98,13 +109,14 @@ export function StudyCard() {
     <div className="pointer-events-none absolute inset-x-0 top-4 z-20 flex justify-center px-3">
       <Card
         size="sm"
-        className="atlas-in pointer-events-auto max-h-[min(70dvh,40rem)] w-full max-w-md gap-3 overflow-y-auto bg-card/95 py-4 ring-foreground/15 backdrop-blur-sm"
+        className="atlas-in pointer-events-auto max-h-[min(70dvh,40rem)] w-full max-w-[28rem] gap-3 overflow-y-auto rounded-lg border-t-2 border-t-primary bg-card/90 py-4 ring-foreground/10 backdrop-blur-sm"
         aria-live="polite"
       >
         <div className="flex items-center justify-between gap-3 px-4">
-          <p className="kicker text-primary!">Study mode</p>
+          <p className="kicker text-primary!">{answerMode === 'locate' ? 'Locate' : 'Study mode'}</p>
           {preparing ? null : (
             <p className="font-mono text-[11px] text-muted-foreground">
+              {answerMode === 'locate' ? `${scopeLabel(scope, regionId, classification)} · ` : ''}
               {correctCount} of {attempts} correct
             </p>
           )}
@@ -172,6 +184,7 @@ export function StudyCard() {
               { id: 'reveal', label: 'Reveal' },
               { id: 'choice', label: 'Choose' },
               { id: 'type', label: 'Type' },
+              { id: 'locate', label: 'Locate' },
             ]}
             onChange={setStudyAnswerMode}
           />
@@ -180,10 +193,25 @@ export function StudyCard() {
           <p className="px-4 text-sm text-muted-foreground">Preparing your study question...</p>
         ) : (
           <div className="px-4">
-            <h2 className="text-sm text-muted-foreground">
-              {studyKind === 'bone' ? 'What bone is this?' : 'What anatomical landmark is highlighted?'}
-            </h2>
-            {studyKind === 'landmark' && bone ? <p className="mt-1 font-mono text-[11px] text-muted-foreground">{bone.displayName}</p> : null}
+            {answerMode === 'locate' && !revealed ? (
+              <div>
+                <h2 className="text-sm text-muted-foreground">
+                  {studyKind === 'bone' ? 'Select this bone' : 'Select this landmark'}
+                </h2>
+                <p className="mt-2 font-specimen text-2xl leading-none tracking-tight">{correctName}</p>
+                <p className="mt-3 text-sm text-muted-foreground">Click it on the skeleton.</p>
+                {locateNarrowed ? (
+                  <p className="mt-2 text-sm text-muted-foreground">Showing one region so the markers stay readable.</p>
+                ) : null}
+              </div>
+            ) : (
+              <h2 className="text-sm text-muted-foreground">
+                {studyKind === 'bone' ? 'What bone is this?' : 'What anatomical landmark is highlighted?'}
+              </h2>
+            )}
+            {answerMode !== 'locate' && studyKind === 'landmark' && bone ? (
+              <p className="mt-1 font-mono text-[11px] text-muted-foreground">{bone.displayName}</p>
+            ) : null}
             {showReveal && !revealed ? (
               <div className="mt-4 grid h-16 place-items-center border border-dashed font-mono text-2xl text-muted-foreground">
                 ?
@@ -261,7 +289,14 @@ export function StudyCard() {
             {answerMode === 'type' && revealed ? (
               <div className="mt-4">
                 <p className="font-mono text-[11px] tracking-wide">{result === 'correct' ? 'Correct' : 'Incorrect'}</p>
-                <p className="mt-2 text-2xl leading-none font-medium tracking-tight">{correctName}</p>
+                <p className="mt-2 font-specimen text-2xl leading-none tracking-tight">{correctName}</p>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">{explanation}</p>
+              </div>
+            ) : null}
+            {answerMode === 'locate' && revealed ? (
+              <div className="mt-4">
+                <p className="font-mono text-[11px] tracking-wide">{result === 'correct' ? 'Correct' : 'Incorrect'}</p>
+                <p className="mt-2 font-specimen text-2xl leading-none tracking-tight">{correctName}</p>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">{explanation}</p>
               </div>
             ) : null}
@@ -298,23 +333,28 @@ export function StudyPanelPrompt() {
   if (!studyMode || revealed) return null
   const bone = getBone(boneId)
   const bonePrompt =
-    answerMode === 'choice'
-      ? 'A bone is highlighted on the skeleton. Choose its name on the study card.'
-      : answerMode === 'type'
-        ? 'A bone is highlighted on the skeleton. Type its name on the study card.'
-        : 'A bone is highlighted on the skeleton. Answer in your head, then reveal it.'
+    answerMode === 'locate'
+      ? 'The study card names a bone. Click that bone on the skeleton.'
+      : answerMode === 'choice'
+        ? 'A bone is highlighted on the skeleton. Choose its name on the study card.'
+        : answerMode === 'type'
+          ? 'A bone is highlighted on the skeleton. Type its name on the study card.'
+          : 'A bone is highlighted on the skeleton. Answer in your head, then reveal it.'
   const landmarkPrompt =
-    answerMode === 'choice'
-      ? `${bone?.displayName ?? 'A bone'} is shown with one landmark marked. Choose that landmark on the study card.`
-      : answerMode === 'type'
-        ? `${bone?.displayName ?? 'A bone'} is shown with one landmark marked. Type the landmark name on the study card.`
-        : `${bone?.displayName ?? 'A bone'} is shown with one landmark marked. Name that landmark, then reveal it.`
+    answerMode === 'locate'
+      ? 'The study card names a landmark. Click its marker on the skeleton.'
+      : answerMode === 'choice'
+        ? `${bone?.displayName ?? 'A bone'} is shown with one landmark marked. Choose that landmark on the study card.`
+        : answerMode === 'type'
+          ? `${bone?.displayName ?? 'A bone'} is shown with one landmark marked. Type the landmark name on the study card.`
+          : `${bone?.displayName ?? 'A bone'} is shown with one landmark marked. Name that landmark, then reveal it.`
   return (
     <div className="atlas-in">
       <p className="kicker text-primary!">Study mode</p>
-      <h2 className="mt-4 text-2xl leading-tight font-medium tracking-tight">
-        {studyKind === 'bone' ? 'Identify the highlighted bone' : 'Identify the landmark'}
+      <h2 className="mt-4 font-specimen text-[2rem] leading-none tracking-tight">
+        {answerMode === 'locate' ? 'Find it on the skeleton' : studyKind === 'bone' ? 'Identify the highlighted bone' : 'Identify the landmark'}
       </h2>
+      <div className="mt-3 h-px w-8 bg-specimen/70" />
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{studyKind === 'bone' ? bonePrompt : landmarkPrompt}</p>
     </div>
   )

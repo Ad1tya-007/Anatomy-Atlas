@@ -13,6 +13,13 @@ const SHORTCUTS = [
   ['[', 'Previous walk stop'],
   [']', 'Next walk stop'],
   ['Esc', 'Exit walk, study, or clear selection'],
+  ['1', 'Atlas look'],
+  ['2', 'Ivory look'],
+  ['3', 'Radiograph look'],
+  ['X', 'Cycle section'],
+  [',', 'Move the section toward the start side'],
+  ['.', 'Move the section toward the far side'],
+  ['E', 'Toggle spread'],
 ]
 
 export function HelpDialog() {
@@ -37,6 +44,11 @@ export function HelpDialog() {
               <li>Compare, beside Left and Right, shows both sides of a paired bone.</li>
               <li>Study mode can be limited to a region or a classification, and answered by choosing or typing.</li>
               <li>Walks step through a fixed path. Exit leaves the last structure selected.</li>
+              <li>Atlas, Ivory, and Radiograph change the light, not the anatomy.</li>
+              <li>Section keeps one side of a sagittal, coronal, or transverse cut. The slider uses the skeleton’s own left, anterior, and superior.</li>
+              <li>Spread separates regions and returns them. Section and Spread do not run together.</li>
+              <li>Connection lines join the selected bone to the other bones in its joints.</li>
+              <li>Locate asks for a click on the named structure. Hover still names bones so you can aim.</li>
             </ul>
           </section>
           <Separator />

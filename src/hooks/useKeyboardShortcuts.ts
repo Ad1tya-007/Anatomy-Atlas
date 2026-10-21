@@ -47,7 +47,34 @@ export function useKeyboardShortcuts(): void {
         store.stepWalk(event.key === ']' ? 1 : -1)
         return
       }
+      if (event.key === '1') {
+        store.setLook('atlas')
+        return
+      }
+      if (event.key === '2') {
+        store.setLook('ivory')
+        return
+      }
+      if (event.key === '3') {
+        store.setLook('radiograph')
+        return
+      }
       const key = event.key.toLowerCase()
+      if (key === 'x') {
+        const order = ['off', 'sagittal', 'coronal', 'transverse'] as const
+        const index = order.indexOf(store.sectionAxis)
+        store.setSectionAxis(order[(index + 1) % order.length] ?? 'off')
+        return
+      }
+      if ((event.key === ',' || event.key === '.') && store.sectionAxis !== 'off') {
+        event.preventDefault()
+        store.setSectionAmount(store.sectionAmount + (event.key === ',' ? -0.05 : 0.05))
+        return
+      }
+      if (key === 'e') {
+        store.setSpread(store.spread < 0.01 ? 0.65 : 0)
+        return
+      }
       if (key === 'r') store.requestPreset('default')
       else if (key === 'f') store.requestPreset('front')
       else if (key === 'b') store.requestPreset('back')

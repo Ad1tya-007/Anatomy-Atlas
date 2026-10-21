@@ -60,6 +60,7 @@ export function visualFor(
     hasSelection: boolean
     /** Joint or compare: non-members use the subdued treatment. */
     group?: boolean
+    pulseBoneId?: string | null
   },
 ): BoneVisual {
   if (!options.showBones) return 'hidden'
@@ -69,7 +70,7 @@ export function visualFor(
     return 'default'
   }
   if (options.highlighted.has(boneId)) return 'selected'
-  if (options.hoveredBoneId === boneId) return 'hover'
+  if (options.hoveredBoneId === boneId || options.pulseBoneId === boneId) return 'hover'
   if (options.isolated) return 'ghost'
   if (options.group) return 'subdued'
   if (options.classification !== 'all') {

@@ -1,17 +1,21 @@
 import { contralateralId, getBone, quizBones } from '@/data/bones'
+import { highlightedIds } from '@/utils/anatomy'
 import { getJoint, isPairedJoint, resolveJointBones } from '@/data/joints'
 import { allLandmarks, getLandmark } from '@/data/landmarks'
 import { navRegions } from '@/data/regions'
 import { getWalk, resolvedStops } from '@/data/walks'
 import { CAMERA_PRESETS, regionFocus } from '@/utils/camera'
+import { cancelArrival } from '@/utils/specimenMotion'
 import type {
   AnatomicalRegion,
   Bone,
   BoneClassification,
   CameraPresetName,
   CameraRequest,
+  LookName,
   MobilePanel,
   ModelState,
+  SectionAxis,
   SelectBoneOptions,
   StudyAnswerMode,
   StudyKind,
@@ -53,6 +57,14 @@ interface AnatomyState {
   studyScopeFallback: boolean
   studyPicked: string | null
   studyResult: StudyResult | null
+  studyLocateNarrowed: boolean
+  studyLocateLandmarkIds: string[]
+  locatePulseBoneId: string | null
+  look: LookName
+  sectionAxis: SectionAxis
+  sectionAmount: number
+  spread: number
+  hasSelected: boolean
   cameraRequest: CameraRequest
   modelState: ModelState
   retryKey: number
@@ -87,6 +99,11 @@ interface AnatomyState {
   setStudyAnswerMode: (mode: StudyAnswerMode) => void
   submitStudyChoice: (label: string) => void
   submitStudyAnswer: (raw: string) => void
+  submitStudyLocate: (target: { boneId?: string; landmarkId?: string }) => void
+  setLook: (look: LookName) => void
+  setSectionAxis: (axis: SectionAxis) => void
+  setSectionAmount: (amount: number) => void
+  setSpread: (amount: number) => void
   requestPreset: (preset: CameraPresetName) => void
   focusCamera: (position: Vec3, target: Vec3) => void
   frameRegion: (regionId: string) => void
@@ -241,18 +258,30 @@ interface QuestionPatch {
   studyRevealed: boolean
   studyBoneId: string
   studyLandmarkId: string | null
-  selectedBoneId: string
+  selectedBoneId: string | null
   selectedLandmarkId: string | null
   studyChoices: string[]
   studyPicked: null
   studyResult: null
   studyScopeFallback: boolean
+  studyLocateNarrowed: boolean
+  studyLocateLandmarkIds: string[]
+  locatePulseBoneId: null
   selectedJointId: null
   jointSide: null
   compareSides: false
   walkId: null
   walkIndex: number
   isolated: false
+}
+
+let locateTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearLocateTimer(): void {
+  if (locateTimer !== null) {
+    clearTimeout(locateTimer)
+    locateTimer = null
+  }
 }
 
 function makeQuestion(
@@ -264,14 +293,19 @@ function makeQuestion(
   excludeBone: string | null,
   excludeLandmark: string | null,
 ): QuestionPatch {
+  clearLocateTimer()
   const pool = studyPool(state)
   const allBones = quizBones()
+  const locate = state.studyAnswerMode === 'locate'
   const base = {
     studyKind: kind,
     studyRevealed: false as const,
     studyPicked: null,
     studyResult: null,
     studyScopeFallback: pool.fallback,
+    studyLocateNarrowed: false,
+    studyLocateLandmarkIds: [] as string[],
+    locatePulseBoneId: null,
     selectedJointId: null,
     jointSide: null,
     compareSides: false as const,
@@ -287,6 +321,17 @@ function makeQuestion(
       records = quizLandmarks(allBones)
       fallback = true
     }
+    let narrowed = false
+    const markerEstimate = (items: LandmarkRecord[]) =>
+      items.reduce((count, record) => count + (record.landmark.bothSides ? 2 : 1), 0)
+    if (locate && markerEstimate(records) > 48) {
+      const region = state.studyRegionId ?? defaultStudyRegion(state.activeRegion)
+      const regional = records.filter((record) => getBone(record.boneId)?.region === region)
+      if (regional.length > 0) {
+        records = regional
+        narrowed = true
+      }
+    }
     const picked = pickOne(records, (record) => record.landmark.id === excludeLandmark)
     const boneId = picked?.boneId ?? 'femur_left'
     const landmarkId = picked?.landmark.id ?? 'femur_left_greater_trochanter'
@@ -298,10 +343,12 @@ function makeQuestion(
     return {
       ...base,
       studyScopeFallback: fallback,
+      studyLocateNarrowed: narrowed,
+      studyLocateLandmarkIds: locate ? records.map((record) => record.landmark.id) : [],
       studyBoneId: boneId,
       studyLandmarkId: landmarkId,
-      selectedBoneId: boneId,
-      selectedLandmarkId: landmarkId,
+      selectedBoneId: locate ? null : boneId,
+      selectedLandmarkId: locate ? null : landmarkId,
       studyChoices: choices,
     }
   }
@@ -315,7 +362,7 @@ function makeQuestion(
     ...base,
     studyBoneId: boneId,
     studyLandmarkId: null,
-    selectedBoneId: boneId,
+    selectedBoneId: locate ? null : boneId,
     selectedLandmarkId: null,
     studyChoices: choices,
   }
@@ -379,6 +426,9 @@ const clearedStudy = {
   studyPicked: null,
   studyResult: null,
   studyScopeFallback: false,
+  studyLocateNarrowed: false,
+  studyLocateLandmarkIds: [] as string[],
+  locatePulseBoneId: null as string | null,
 }
 
 export const useAnatomyStore = create<AnatomyState>((set, get) => ({
@@ -411,6 +461,14 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
   studyScopeFallback: false,
   studyPicked: null,
   studyResult: null,
+  studyLocateNarrowed: false,
+  studyLocateLandmarkIds: [],
+  locatePulseBoneId: null,
+  look: 'atlas',
+  sectionAxis: 'off',
+  sectionAmount: 0.55,
+  spread: 0,
+  hasSelected: false,
   cameraRequest: { id: 0, kind: 'preset', preset: 'default', ...CAMERA_PRESETS.default },
   modelState: 'loading',
   retryKey: 0,
@@ -427,9 +485,14 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
     const keepCompare =
       state.compareSides && !state.selectedJointId && (id === state.selectedBoneId || id === partner)
     const mobile = !fromStudy ? openInfoOnMobile() : undefined
+    if (!fromStudy) clearLocateTimer()
     set({
       selectedBoneId: id,
       selectedLandmarkId: landmarkId,
+      hasSelected: true,
+      locatePulseBoneId: fromStudy ? state.locatePulseBoneId : null,
+      studyLocateNarrowed: fromStudy ? state.studyLocateNarrowed : false,
+      studyLocateLandmarkIds: fromStudy ? state.studyLocateLandmarkIds : [],
       selectedJointId: null,
       jointSide: null,
       compareSides: keepCompare,
@@ -456,6 +519,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
     set({
       selectedBoneId: record.boneId,
       selectedLandmarkId: id,
+      hasSelected: true,
       selectedJointId: null,
       jointSide: null,
       compareSides: false,
@@ -466,6 +530,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
   },
 
   selectJoint: (id, side) => {
+    clearLocateTimer()
     const joint = getJoint(id)
     if (!joint) return
     const paired = isPairedJoint(joint)
@@ -484,6 +549,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
       walkId: null,
       walkIndex: 0,
       activeRegion: joint.region,
+      hasSelected: true,
       ...clearedStudy,
       mobilePanel: mobile ?? (state.mobilePanel === 'nav' ? 'none' : state.mobilePanel),
     })
@@ -502,6 +568,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
   },
 
   startWalk: (id) => {
+    clearLocateTimer()
     const walk = getWalk(id)
     const stops = walk ? resolvedStops(walk) : []
     const first = stops[0]
@@ -512,6 +579,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
       ...patch,
       walkId: walk.id,
       walkIndex: 0,
+      hasSelected: true,
       ...clearedStudy,
       helpOpen: false,
       mobilePanel: 'none',
@@ -548,6 +616,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
   },
 
   clearSelection: () => {
+    clearLocateTimer()
     set({
       selectedBoneId: null,
       selectedLandmarkId: null,
@@ -602,15 +671,19 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
       studyCorrect: 0,
       helpOpen: false,
       mobilePanel: 'none',
+      hasSelected: state.hasSelected || question.selectedBoneId !== null,
       ...question,
     })
   },
 
-  exitStudy: () => set({ ...clearedStudy }),
+  exitStudy: () => {
+    clearLocateTimer()
+    set({ ...clearedStudy })
+  },
 
   revealStudy: () => {
     const state = get()
-    if (state.studyAnswerMode === 'type') return
+    if (state.studyAnswerMode === 'type' || state.studyAnswerMode === 'locate') return
     if (state.studyAnswerMode === 'choice' && state.studyChoices.length >= 2) return
     set({ studyRevealed: true })
   },
@@ -720,6 +793,81 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
       studyResult: ok ? 'correct' : 'incorrect',
       studyAttempts: state.studyAttempts + 1,
       studyCorrect: state.studyCorrect + (ok ? 1 : 0),
+    })
+  },
+
+  submitStudyLocate: (target) => {
+    const state = get()
+    if (!state.studyMode || state.studyRevealed || state.studyAnswerMode !== 'locate') return
+    if (state.locatePulseBoneId) return
+    const finish = (ok: boolean) => {
+      const now = get()
+      if (!now.studyMode || now.studyRevealed || now.studyAnswerMode !== 'locate') return
+      if (now.studyBoneId !== state.studyBoneId || now.studyLandmarkId !== state.studyLandmarkId) return
+      clearLocateTimer()
+      set({
+        studyRevealed: true,
+        studyResult: ok ? 'correct' : 'incorrect',
+        studyAttempts: now.studyAttempts + 1,
+        studyCorrect: now.studyCorrect + (ok ? 1 : 0),
+        locatePulseBoneId: null,
+        selectedBoneId: now.studyBoneId,
+        selectedLandmarkId: now.studyKind === 'landmark' ? now.studyLandmarkId : null,
+        hasSelected: true,
+      })
+    }
+    if (state.studyKind === 'bone') {
+      if (!target.boneId) return
+      const expected = highlightedIds(state.studyBoneId)
+      if (expected.has(target.boneId)) {
+        finish(true)
+        return
+      }
+      set({ locatePulseBoneId: target.boneId })
+      const tokenBone = state.studyBoneId
+      const tokenLandmark = state.studyLandmarkId
+      locateTimer = setTimeout(() => {
+        const now = get()
+        if (now.studyBoneId !== tokenBone || now.studyLandmarkId !== tokenLandmark) return
+        finish(false)
+      }, 400)
+      return
+    }
+    if (!target.landmarkId) return
+    if (target.landmarkId === state.studyLandmarkId) {
+      finish(true)
+      return
+    }
+    const pulse = getLandmark(target.landmarkId)?.boneId ?? null
+    set({ locatePulseBoneId: pulse })
+    const tokenBone = state.studyBoneId
+    const tokenLandmark = state.studyLandmarkId
+    locateTimer = setTimeout(() => {
+      const now = get()
+      if (now.studyBoneId !== tokenBone || now.studyLandmarkId !== tokenLandmark) return
+      finish(false)
+    }, 400)
+  },
+
+  setLook: (look) => set({ look }),
+
+  setSectionAxis: (axis) => {
+    if (axis === 'off') {
+      set({ sectionAxis: 'off' })
+      return
+    }
+    cancelArrival(0)
+    set({ sectionAxis: axis, spread: 0 })
+  },
+
+  setSectionAmount: (amount) => set({ sectionAmount: Math.min(1, Math.max(0, amount)) }),
+
+  setSpread: (amount) => {
+    const spread = Math.min(1, Math.max(0, amount))
+    cancelArrival(spread)
+    set({
+      spread,
+      sectionAxis: spread > 0 ? 'off' : get().sectionAxis,
     })
   },
 

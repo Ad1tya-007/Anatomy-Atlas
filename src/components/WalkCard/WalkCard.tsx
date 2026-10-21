@@ -29,7 +29,7 @@ export function WalkCard() {
     <div className="pointer-events-none absolute inset-x-0 top-4 z-20 flex justify-center px-3">
       <Card
         size="sm"
-        className="atlas-in pointer-events-auto w-full max-w-md gap-3 bg-card/95 py-4 ring-foreground/15 backdrop-blur-sm"
+        className="atlas-in pointer-events-auto w-full max-w-[28rem] gap-3 rounded-lg border-t-2 border-t-primary bg-card/90 py-4 ring-foreground/10 backdrop-blur-sm"
         aria-live="polite"
       >
         <div className="px-4">
@@ -39,7 +39,7 @@ export function WalkCard() {
               {walkIndex + 1} of {stops.length}
             </p>
           </div>
-          <Progress className="mt-3" value={((walkIndex + 1) / stops.length) * 100} aria-label="Walk progress" />
+          <Progress className="mt-3 h-0.5" value={((walkIndex + 1) / stops.length) * 100} aria-label="Walk progress" />
           <p className="mt-3 text-xl leading-tight font-medium tracking-tight">{stopTitle(stop)}</p>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">{stop.text}</p>
           <div className="mt-4 flex flex-wrap gap-2">

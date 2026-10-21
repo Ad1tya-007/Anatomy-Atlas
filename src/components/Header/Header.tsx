@@ -1,14 +1,28 @@
 import { SearchField } from '@/components/Search/SearchField'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { getBone } from '@/data/bones'
+import { getJoint } from '@/data/joints'
+import { getLandmark } from '@/data/landmarks'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import { BookOpen, CircleHelp } from 'lucide-react'
 
 export function Header() {
   const studyMode = useAnatomyStore((state) => state.studyMode)
+  const studyRevealed = useAnatomyStore((state) => state.studyRevealed)
+  const selectedBoneId = useAnatomyStore((state) => state.selectedBoneId)
+  const selectedLandmarkId = useAnatomyStore((state) => state.selectedLandmarkId)
+  const selectedJointId = useAnatomyStore((state) => state.selectedJointId)
   const enterStudy = useAnatomyStore((state) => state.enterStudy)
   const exitStudy = useAnatomyStore((state) => state.exitStudy)
   const setHelpOpen = useAnatomyStore((state) => state.setHelpOpen)
+  const hideName = studyMode && !studyRevealed
+  const readout = hideName
+    ? null
+    : (getLandmark(selectedLandmarkId)?.landmark.name ??
+      getJoint(selectedJointId)?.name ??
+      getBone(selectedBoneId)?.name ??
+      null)
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-card px-3 sm:px-4">
@@ -21,6 +35,9 @@ export function Header() {
           <p className="kicker mt-1 hidden sm:block">Skeletal system</p>
         </div>
       </div>
+      {readout ? (
+        <p className="hidden min-w-0 max-w-[14rem] truncate font-specimen text-[15px] leading-none lg:block">{readout}</p>
+      ) : null}
       <div className="min-w-0 flex-1">
         <div className="mx-auto w-full max-w-xl">
           <SearchField />

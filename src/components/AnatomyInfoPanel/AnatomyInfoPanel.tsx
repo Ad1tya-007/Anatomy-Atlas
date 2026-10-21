@@ -21,6 +21,15 @@ function memberLabel(bone: Bone, members: Bone[]): string {
   return shared ? bone.displayName : bone.name
 }
 
+function StructureTitle({ children }: { children: string }) {
+  return (
+    <>
+      <h2 className="mt-3 font-specimen text-[2rem] leading-none tracking-tight">{children}</h2>
+      <div className="mt-3 h-px w-8 bg-specimen/70" />
+    </>
+  )
+}
+
 function RecordButton({ children, onClick }: { children: string; onClick: () => void }) {
   return (
     <Button
@@ -70,7 +79,7 @@ function JointPanel({ joint }: { joint: Joint }) {
         {paired ? <Badge variant="secondary">{side === 'left' ? 'Left' : 'Right'}</Badge> : null}
         <Badge variant="secondary">Joint</Badge>
       </div>
-      <h2 className="mt-3 text-[1.75rem] leading-none font-medium tracking-tight">{joint.name}</h2>
+      <StructureTitle>{joint.name}</StructureTitle>
       {paired ? (
         <ButtonGroup className="mt-3" aria-label="Side">
           {(['left', 'right'] as const).map((option) => (
@@ -151,9 +160,9 @@ export function AnatomyInfoPanel({ className, id }: { className?: string; id?: s
           ) : joint ? (
             <JointPanel joint={joint} />
           ) : !bone ? (
-            <Empty className="border-0 px-0 pt-10">
+            <Empty className="rounded-lg border border-solid bg-card px-4 pt-10">
               <EmptyHeader>
-                <EmptyMedia variant="icon">
+                <EmptyMedia variant="icon" className="bg-background text-specimen-dim">
                   <BoneIcon />
                 </EmptyMedia>
                 <EmptyTitle className="text-lg">Explore the skeleton</EmptyTitle>
@@ -174,8 +183,14 @@ export function AnatomyInfoPanel({ className, id }: { className?: string; id?: s
                 )}
                 <Badge variant="secondary">{CLASS_LABEL[bone.classification]}</Badge>
               </div>
-              <h2 className="mt-3 text-[1.75rem] leading-none font-medium tracking-tight">{bone.name}</h2>
-              {bone.side !== 'midline' ? <p className="mt-2 text-sm text-muted-foreground">{bone.displayName}</p> : null}
+              <StructureTitle>
+                {landmark && landmark.boneId === bone.id ? landmark.landmark.name : bone.name}
+              </StructureTitle>
+              {landmark && landmark.boneId === bone.id ? (
+                <p className="mt-2 text-sm text-muted-foreground">{bone.displayName}</p>
+              ) : bone.side !== 'midline' ? (
+                <p className="mt-2 text-sm text-muted-foreground">{bone.displayName}</p>
+              ) : null}
               {canCompare ? (
                 <ButtonGroup className="mt-3" aria-label="Side">
                   {(['left', 'right'] as const).map((side) => {
@@ -261,7 +276,7 @@ export function AnatomyInfoPanel({ className, id }: { className?: string; id?: s
               {landmark && landmark.boneId === bone.id ? (
                 <Card size="sm" className="mt-5 bg-primary/8 ring-primary/40">
                   <CardContent className="grid gap-2">
-                    <h3 className="kicker text-primary!">{landmark.landmark.name}</h3>
+                    <h3 className="font-specimen text-lg leading-tight tracking-tight">{landmark.landmark.name}</h3>
                     <p className="text-sm leading-6 text-foreground/90">{landmark.landmark.description}</p>
                     {landmark.landmark.significance ? (
                       <p className="text-sm leading-5 text-muted-foreground">{landmark.landmark.significance}</p>
