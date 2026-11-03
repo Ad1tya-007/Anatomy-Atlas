@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Typecheck, lint, unit tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - name: Unit, content, and model tests with coverage
+        run: npm run test:coverage
+      - name: Coverage summary
+        if: always() && hashFiles('coverage/coverage-summary.json') != ''
+        run: |
+          node -e '
+            const total = require("./coverage/coverage-summary.json").total
+            const rows = ["lines", "statements", "functions", "branches"]
+              .map((key) => `| ${key} | ${total[key].pct}% | ${total[key].covered} / ${total[key].total} |`)
+            console.log(["### Coverage", "| Metric | Percent | Covered |", "| --- | --- | --- |", ...rows].join("\n"))
+          ' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage
+          path: coverage
+          retention-days: 7
+      - run: npx vite build
+      - name: Bundle size
+        run: |
+          {
+            echo "### Bundle"
+            echo "| File | Size | Gzip |"
+            echo "| --- | --- | --- |"
+            for file in dist/assets/*.js dist/assets/*.css; do
+              echo "| $(basename "$file") | $(du -k "$file" | cut -f1) kB | $(gzip -c "$file" | wc -c | awk '{printf "%.1f", $1/1024}') kB |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The same image generated the Linux screenshot baselines, so fonts and software WebGL match exactly.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --ipc=host
+    env:
+      HOME: /root
+    steps:
+      - uses: actions/checkout@v7
+      - run: npm ci
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
+
+  preview:
+    name: Preview deploy
+    needs: quality
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Check for Vercel credentials
+        id: vercel
+        run: |
+          if [ -n "$VERCEL_TOKEN" ] && [ -n "$VERCEL_ORG_ID" ] && [ -n "$VERCEL_PROJECT_ID" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Preview deploys are off. Add VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID repository secrets to turn them on."
+          fi
+      - uses: actions/checkout@v7
+        if: steps.vercel.outputs.enabled == 'true'
+      - uses: actions/setup-node@v7
+        if: steps.vercel.outputs.enabled == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Build and deploy
+        id: deploy
+        if: steps.vercel.outputs.enabled == 'true'
+        run: |
+          npm ci
+          npx vercel@65 pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          npx vercel@65 build --token="$VERCEL_TOKEN"
+          echo "url=$(npx vercel@65 deploy --prebuilt --token="$VERCEL_TOKEN")" >> "$GITHUB_OUTPUT"
+      - name: Comment the preview URL
+        if: steps.vercel.outputs.enabled == 'true'
+        uses: actions/github-script@v9
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+        with:
+          script: |
+            const marker = '<!-- preview-deploy -->'
+            const body = `${marker}\n**Preview:** ${process.env.PREVIEW_URL}\n\nBuilt from ${context.sha.slice(0, 7)}.`
+            const { owner, repo } = context.repo
+            const issue_number = context.issue.number
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number })
+            const existing = comments.find((comment) => comment.body?.includes(marker))
+            if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body })
+            else await github.rest.issues.createComment({ owner, repo, issue_number, body })
