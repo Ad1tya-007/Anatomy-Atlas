@@ -1,9 +1,13 @@
 import { getBone } from '@/data/bones'
 import { getLandmark } from '@/data/landmarks'
 import { resolvedStops, walks } from '@/data/walks'
+import { NEW_CARDS_PER_DAY } from '@/features/srs/queue'
+import { createMemoryRepository } from '@/features/srs/repository'
+import { setRepository, useSrsStore } from '@/features/srs/srsStore'
+import type { StudyAnswer } from '@/features/srs/types'
 import { correctLabel } from '@/features/study/engine'
-import { useAnatomyStore } from '@/store/anatomyStore'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { onStudyAnswer, useAnatomyStore } from '@/store/anatomyStore'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 
 const initial = useAnatomyStore.getState()
 const store = () => useAnatomyStore.getState()
@@ -207,6 +211,102 @@ describe('study mode', () => {
     store().enterStudy('landmark')
     store().exitStudy()
     expect(store()).toMatchObject({ studyMode: false, studyAttempts: 0, studyChoices: [] })
+  })
+})
+
+function capture(): StudyAnswer[] {
+  const answers: StudyAnswer[] = []
+  const stop = onStudyAnswer((answer) => answers.push(answer))
+  onTestFinished(stop)
+  return answers
+}
+
+describe('answer events', () => {
+  it('reports each scored answer once with its response time', () => {
+    const answers = capture()
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-03-02T09:00:00Z'))
+    store().setStudyAnswerMode('choice')
+    vi.setSystemTime(new Date('2026-03-02T09:00:04Z'))
+    store().submitStudyChoice(wrongChoice())
+    store().submitStudyChoice(store().studyChoices[0]!)
+    expect(answers).toHaveLength(1)
+    expect(answers[0]).toMatchObject({ kind: 'bone', answerMode: 'choice', correct: false, responseMs: 4000 })
+    expect(answers[0]!.boneId).toBe(store().studyBoneId)
+  })
+
+  it('takes a self-grade in reveal mode, once, only after revealing', () => {
+    const answers = capture()
+    store().enterStudy('landmark')
+    store().gradeStudy(3)
+    expect(answers).toHaveLength(0)
+    store().revealStudy()
+    store().gradeStudy(4)
+    store().gradeStudy(1)
+    expect(answers).toHaveLength(1)
+    expect(answers[0]).toMatchObject({ kind: 'landmark', selfGrade: 4, correct: true })
+    expect(answers[0]!.landmarkId).toBe(store().studyLandmarkId)
+    expect(store()).toMatchObject({ studyGrade: 4, studyResult: 'correct', studyAttempts: 1, studyCorrect: 1 })
+  })
+})
+
+describe('review mode', () => {
+  beforeEach(async () => {
+    setRepository(createMemoryRepository())
+    await useSrsStore.getState().load()
+  })
+
+  it('introduces new cards until the daily limit, then reports caught up', async () => {
+    store().setStudyScope('region')
+    store().setStudyRegion('lower-limb')
+    store().setStudyQueue('review')
+    const seen = new Set<string>()
+    for (let index = 0; index < NEW_CARDS_PER_DAY; index += 1) {
+      expect(store().studyCaughtUp).toBe(false)
+      const boneId = store().studyBoneId!
+      expect(getBone(boneId)?.region).toBe('lower-limb')
+      seen.add(boneId)
+      store().revealStudy()
+      await useSrsStore.getState().record({
+        kind: 'bone',
+        boneId,
+        landmarkId: null,
+        answerMode: 'reveal',
+        correct: true,
+        responseMs: 1000,
+        selfGrade: 3,
+      })
+      store().nextStudy()
+    }
+    expect(seen.size).toBe(NEW_CARDS_PER_DAY)
+    expect(store()).toMatchObject({ studyCaughtUp: true, studyBoneId: null, selectedBoneId: null })
+    expect(store().studyNextDue).not.toBeNull()
+  })
+
+  it('asks the card that is due', async () => {
+    const past = new Date(Date.now() - 30 * 86_400_000)
+    await useSrsStore.getState().record(
+      {
+        kind: 'bone',
+        boneId: 'tibia_left',
+        landmarkId: null,
+        answerMode: 'type',
+        correct: false,
+        responseMs: 1,
+        selfGrade: null,
+      },
+      past,
+    )
+    store().setStudyQueue('review')
+    expect(store()).toMatchObject({ studyQueue: 'review', studyBoneId: 'tibia_left', selectedBoneId: 'tibia_left' })
+    expect(store().studyRemaining).toBeGreaterThan(1)
+  })
+
+  it('switches back to random practice', () => {
+    store().setStudyQueue('review')
+    store().setStudyQueue('practice')
+    expect(store()).toMatchObject({ studyQueue: 'practice', studyCaughtUp: false, studyRemaining: 0 })
+    expect(store().studyBoneId).not.toBeNull()
   })
 })
 

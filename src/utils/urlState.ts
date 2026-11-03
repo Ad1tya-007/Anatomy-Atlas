@@ -1,7 +1,7 @@
 import { getBone } from '@/data/bones'
 import { getJoint, isPairedJoint } from '@/data/joints'
 import { getLandmark } from '@/data/landmarks'
-import { getWalk, resolvedStops } from '@/data/walks'
+import { getWalk, isGeneratedWalk, resolvedStops } from '@/data/walks'
 import type { CameraPose, LookName, SectionAxis, Vec3, ViewState } from '@/types/anatomy'
 import { CAMERA_PRESETS } from '@/utils/camera'
 import { z } from 'zod/mini'
@@ -34,7 +34,7 @@ const walkId = knownId((id) => {
   return walk !== undefined && resolvedStops(walk).length > 0
 })
 const side = z.enum(['left', 'right'])
-const look = z.enum(['atlas', 'ivory', 'radiograph'] satisfies LookName[])
+const look = z.enum(['atlas', 'ivory', 'radiograph', 'mastery'] satisfies LookName[])
 const sectionAxis = z.enum(['sagittal', 'coronal', 'transverse'] satisfies Exclude<SectionAxis, 'off'>[])
 // Zod 4 numbers reject Infinity and NaN, so no separate finite check is needed.
 const unit = z.coerce.number().check(z.minimum(0), z.maximum(1))
@@ -163,7 +163,7 @@ export interface ShareableState {
 export function viewFromState(state: ShareableState): ViewState {
   const view: ViewState = {}
   const hideSelection = state.studyMode && !state.studyRevealed
-  if (state.walkId) {
+  if (state.walkId && !isGeneratedWalk(state.walkId)) {
     view.walkId = state.walkId
     if (state.walkIndex > 0) view.walkIndex = state.walkIndex
   } else if (!hideSelection) {

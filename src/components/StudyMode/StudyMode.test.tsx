@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { StudyCard } from '@/components/StudyMode/StudyMode'
+import { createMemoryRepository } from '@/features/srs/repository'
+import { setRepository, useSrsStore } from '@/features/srs/srsStore'
 import { correctLabel } from '@/features/study/engine'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
@@ -70,5 +72,50 @@ describe('StudyCard', () => {
 
     expect(screen.getByText('Correct')).toBeInTheDocument()
     expect(screen.getByText('1 of 1 correct')).toBeInTheDocument()
+  })
+
+  describe('spaced repetition', () => {
+    beforeEach(async () => {
+      setRepository(createMemoryRepository())
+      await act(() => useSrsStore.getState().load())
+    })
+
+    it('asks for a self-grade after revealing and shows when each grade schedules the card', () => {
+      act(() => {
+        useAnatomyStore.setState({ modelState: 'ready' })
+        useAnatomyStore.getState().enterStudy('bone')
+      })
+      render(<StudyCard />)
+      expect(screen.queryByRole('group', { name: 'Grade your answer' })).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Reveal answer' }))
+      const grades = screen.getByRole('group', { name: 'Grade your answer' })
+      expect(
+        within(grades)
+          .getAllByRole('button')
+          .map((button) => button.textContent),
+      ).toEqual([
+        expect.stringMatching(/^Again/),
+        expect.stringMatching(/^Hard/),
+        expect.stringMatching(/^Good/),
+        expect.stringMatching(/^Easy\s*in \d+ days$/),
+      ])
+      fireEvent.click(within(grades).getByRole('button', { name: /^Good/ }))
+      expect(screen.queryByRole('group', { name: 'Grade your answer' })).not.toBeInTheDocument()
+      expect(screen.getByText('1 of 1 correct')).toBeInTheDocument()
+    })
+
+    it('reports when nothing is due and offers practice instead', () => {
+      act(() => {
+        useAnatomyStore.setState({ modelState: 'ready' })
+        useAnatomyStore.getState().setStudyScope('region')
+        useAnatomyStore.getState().setStudyRegion('head')
+      })
+      render(<StudyCard />)
+      expect(screen.getByRole('radio', { name: /^Review due · \d+$/ })).toBeInTheDocument()
+      act(() => useAnatomyStore.setState({ studyCaughtUp: true, studyQueue: 'review', studyBoneId: null }))
+      expect(screen.getByRole('heading', { name: 'All caught up' })).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Practice instead' }))
+      expect(useAnatomyStore.getState()).toMatchObject({ studyQueue: 'practice', studyCaughtUp: false })
+    })
   })
 })

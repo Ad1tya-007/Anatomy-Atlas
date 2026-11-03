@@ -20,7 +20,10 @@
     // The combobox, listbox, and group roles follow the WAI-ARIA patterns on purpose.
     "jsx-a11y/prefer-tag-over-role": "off",
     "import/no-cycle": "error",
-    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css", "@testing-library/jest-dom/vitest"] }],
+    "import/no-unassigned-import": [
+      "warn",
+      { "allow": ["**/*.css", "@testing-library/jest-dom/vitest", "fake-indexeddb/auto"] }
+    ],
     "typescript/no-explicit-any": "error",
     "vitest/valid-expect": ["error", { "maxArgs": 2 }],
     "vitest/expect-expect": ["error", { "assertFunctionNames": ["expect", "expectValidChoices"] }],
@@ -34,6 +37,13 @@
         "jsx-a11y/click-events-have-key-events": "off",
         "jsx-a11y/no-noninteractive-element-interactions": "off",
         "no-underscore-dangle": "off"
+      }
+    },
+    {
+      // Command-line scripts report to the terminal.
+      "files": ["scripts/**", "evals/**"],
+      "rules": {
+        "no-console": "off"
       }
     }
   ],

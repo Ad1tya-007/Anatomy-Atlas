@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { useSpacedRepetition } from '@/features/srs/useSpacedRepetition'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useUrlSync } from '@/hooks/useUrlSync'
 import { useAnatomyStore } from '@/store/anatomyStore'
@@ -63,6 +64,7 @@ function MobileDrawers() {
 export default function App() {
   useKeyboardShortcuts()
   useUrlSync()
+  useSpacedRepetition()
   return (
     <TooltipProvider>
       <div className="flex h-dvh flex-col overflow-hidden bg-background font-sans text-foreground">

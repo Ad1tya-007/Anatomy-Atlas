@@ -6,6 +6,9 @@ import { Toggle } from '@/components/ui/toggle'
 import { isPairedJoint, joints } from '@/data/joints'
 import { CLASS_LABEL, CLASS_OPTIONS } from '@/data/labels'
 import { walks } from '@/data/walks'
+import { startWeakestWalk } from '@/features/srs/startWeakestWalk'
+import { useMasteryByBone } from '@/features/srs/useMastery'
+import { WEAKEST_WALK_ID } from '@/features/srs/weakestWalk'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -163,12 +166,28 @@ function JointNav() {
 function WalkNav() {
   const walkId = useAnatomyStore((state) => state.walkId)
   const startWalk = useAnatomyStore((state) => state.startWalk)
+  const mastery = useMasteryByBone()
+  const weakestActive = walkId === WEAKEST_WALK_ID
 
   return (
     <section className="px-2 py-2" aria-labelledby="walks-heading">
       <h3 id="walks-heading" className="kicker px-2 pt-1 pb-2">
         Guided walks
       </h3>
+      {mastery.size > 0 ? (
+        <button
+          type="button"
+          className={cn(
+            'flex h-8 w-full items-center px-2 text-left text-[13px]',
+            weakestActive ? 'bg-primary/15 font-medium text-foreground' : 'text-foreground/90 hover:bg-muted',
+          )}
+          aria-current={weakestActive ? 'true' : undefined}
+          onClick={() => startWeakestWalk(mastery)}
+        >
+          <span className="truncate">Your weakest areas</span>
+          <span className="ml-auto font-mono text-[10px] text-muted-foreground">from your reviews</span>
+        </button>
+      ) : null}
       {walks.map((walk) => {
         const active = walkId === walk.id
         return (

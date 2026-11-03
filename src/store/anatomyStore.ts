@@ -3,9 +3,13 @@ import { highlightedIds } from '@/utils/anatomy'
 import { getJoint, isPairedJoint, resolveJointBones } from '@/data/joints'
 import { allLandmarks, getLandmark } from '@/data/landmarks'
 import { getWalk, resolvedStops } from '@/data/walks'
+import { pickReview } from '@/features/srs/review'
+import { useSrsStore } from '@/features/srs/srsStore'
+import { cardIdFor, type Grade, type StudyAnswer } from '@/features/srs/types'
 import {
   answerIsCorrect,
   buildQuestion,
+  buildQuestionFor,
   correctLabel,
   defaultStudyRegion,
   normalizeAnswer,
@@ -26,6 +30,7 @@ import type {
   SelectBoneOptions,
   StudyAnswerMode,
   StudyKind,
+  StudyQueue,
   StudyResult,
   StudyScope,
   Vec3,
@@ -67,6 +72,17 @@ interface AnatomyState {
   studyLocateNarrowed: boolean
   studyLocateLandmarkIds: string[]
   locatePulseBoneId: string | null
+  studyQueue: StudyQueue
+  /** Review mode found nothing due in scope. */
+  studyCaughtUp: boolean
+  /** ISO time the next card in scope comes due, when caught up. */
+  studyNextDue: string | null
+  /** Cards left in today's review queue, counting the current one. */
+  studyRemaining: number
+  /** When the current question appeared, for response-time grading. */
+  studyStartedAt: number
+  /** The learner's own grade in reveal mode. */
+  studyGrade: Grade | null
   look: LookName
   sectionAxis: SectionAxis
   sectionAmount: number
@@ -111,6 +127,8 @@ interface AnatomyState {
   submitStudyChoice: (label: string) => void
   submitStudyAnswer: (raw: string) => void
   submitStudyLocate: (target: { boneId?: string; landmarkId?: string }) => void
+  gradeStudy: (grade: Grade) => void
+  setStudyQueue: (queue: StudyQueue) => void
   setLook: (look: LookName) => void
   setSectionAxis: (axis: SectionAxis) => void
   setSectionAmount: (amount: number) => void
@@ -137,7 +155,7 @@ function nextCamera(partial: Omit<CameraRequest, 'id'>): CameraRequest {
 interface QuestionPatch {
   studyKind: StudyKind
   studyRevealed: boolean
-  studyBoneId: string
+  studyBoneId: string | null
   studyLandmarkId: string | null
   selectedBoneId: string | null
   selectedLandmarkId: string | null
@@ -154,6 +172,34 @@ interface QuestionPatch {
   walkId: null
   walkIndex: number
   isolated: false
+  studyCaughtUp: boolean
+  studyNextDue: string | null
+  studyRemaining: number
+  studyStartedAt: number
+  studyGrade: null
+}
+
+type AnswerListener = (answer: StudyAnswer) => void
+const answerListeners = new Set<AnswerListener>()
+
+/** Notifies the listener each time a study question is answered. Returns an unsubscribe function. */
+export function onStudyAnswer(listener: AnswerListener): () => void {
+  answerListeners.add(listener)
+  return () => answerListeners.delete(listener)
+}
+
+function emitAnswer(state: AnatomyState, correct: boolean, selfGrade: Grade | null = null): void {
+  if (!state.studyBoneId) return
+  const answer: StudyAnswer = {
+    kind: state.studyKind,
+    boneId: state.studyBoneId,
+    landmarkId: state.studyKind === 'landmark' ? state.studyLandmarkId : null,
+    answerMode: state.studyAnswerMode,
+    correct,
+    responseMs: state.studyStartedAt > 0 ? Date.now() - state.studyStartedAt : null,
+    selfGrade,
+  }
+  for (const listener of answerListeners) listener(answer)
 }
 
 let locateTimer: ReturnType<typeof setTimeout> | null = null
@@ -166,27 +212,17 @@ function clearLocateTimer(): void {
 }
 
 function makeQuestion(
-  state: StudyConfig,
+  state: StudyConfig & { studyQueue: StudyQueue },
   kind: StudyKind,
   excludeBone: string | null,
   excludeLandmark: string | null,
 ): QuestionPatch {
   clearLocateTimer()
-  const question = buildQuestion(state, kind, excludeBone, excludeLandmark)
-  const locate = state.studyAnswerMode === 'locate'
-  return {
+  const shared = {
     studyKind: kind,
     studyRevealed: false,
-    studyBoneId: question.boneId,
-    studyLandmarkId: question.landmarkId,
-    selectedBoneId: locate ? null : question.boneId,
-    selectedLandmarkId: locate ? null : question.landmarkId,
-    studyChoices: question.choices,
     studyPicked: null,
     studyResult: null,
-    studyScopeFallback: question.fallback,
-    studyLocateNarrowed: question.locateNarrowed,
-    studyLocateLandmarkIds: question.locateLandmarkIds,
     locatePulseBoneId: null,
     selectedJointId: null,
     jointSide: null,
@@ -194,6 +230,49 @@ function makeQuestion(
     walkId: null,
     walkIndex: 0,
     isolated: false,
+    studyStartedAt: Date.now(),
+    studyGrade: null,
+  } as const
+  let remaining = 0
+  let question
+  if (state.studyQueue === 'review') {
+    const excludeCard = excludeBone ? cardIdFor(kind, excludeBone, excludeLandmark) : null
+    const pick = pickReview(state, kind, useSrsStore.getState(), excludeCard, new Date())
+    if (!pick.target) {
+      return {
+        ...shared,
+        studyBoneId: null,
+        studyLandmarkId: null,
+        selectedBoneId: null,
+        selectedLandmarkId: null,
+        studyChoices: [],
+        studyScopeFallback: false,
+        studyLocateNarrowed: false,
+        studyLocateLandmarkIds: [],
+        studyCaughtUp: true,
+        studyNextDue: pick.nextDue?.toISOString() ?? null,
+        studyRemaining: 0,
+      }
+    }
+    remaining = pick.remaining
+    question = buildQuestionFor(state, pick.target)
+  } else {
+    question = buildQuestion(state, kind, excludeBone, excludeLandmark)
+  }
+  const locate = state.studyAnswerMode === 'locate'
+  return {
+    ...shared,
+    studyCaughtUp: false,
+    studyNextDue: null,
+    studyRemaining: remaining,
+    studyBoneId: question.boneId,
+    studyLandmarkId: question.landmarkId,
+    selectedBoneId: locate ? null : question.boneId,
+    selectedLandmarkId: locate ? null : question.landmarkId,
+    studyChoices: question.choices,
+    studyScopeFallback: question.fallback,
+    studyLocateNarrowed: question.locateNarrowed,
+    studyLocateLandmarkIds: question.locateLandmarkIds,
   }
 }
 
@@ -244,6 +323,9 @@ const clearedStudy = {
   studyLocateNarrowed: false,
   studyLocateLandmarkIds: [] as string[],
   locatePulseBoneId: null as string | null,
+  studyCaughtUp: false,
+  studyNextDue: null,
+  studyGrade: null,
 }
 
 export const useAnatomyStore = create<AnatomyState>((set, get) => ({
@@ -279,6 +361,12 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
   studyLocateNarrowed: false,
   studyLocateLandmarkIds: [],
   locatePulseBoneId: null,
+  studyQueue: 'practice',
+  studyCaughtUp: false,
+  studyNextDue: null,
+  studyRemaining: 0,
+  studyStartedAt: 0,
+  studyGrade: null,
   look: 'atlas',
   sectionAxis: 'off',
   sectionAmount: 0.55,
@@ -599,6 +687,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
       studyAttempts: state.studyAttempts + 1,
       studyCorrect: state.studyCorrect + (ok ? 1 : 0),
     })
+    emitAnswer(state, ok)
   },
 
   submitStudyAnswer: (raw) => {
@@ -613,6 +702,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
       studyAttempts: state.studyAttempts + 1,
       studyCorrect: state.studyCorrect + (ok ? 1 : 0),
     })
+    emitAnswer(state, ok)
   },
 
   submitStudyLocate: (target) => {
@@ -634,6 +724,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
         selectedLandmarkId: now.studyKind === 'landmark' ? now.studyLandmarkId : null,
         hasSelected: true,
       })
+      emitAnswer(now, ok)
     }
     if (state.studyKind === 'bone') {
       if (!target.boneId) return
@@ -666,6 +757,37 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
       if (now.studyBoneId !== tokenBone || now.studyLandmarkId !== tokenLandmark) return
       finish(false)
     }, 400)
+  },
+
+  gradeStudy: (grade) => {
+    const state = get()
+    if (!state.studyMode || !state.studyRevealed || state.studyGrade !== null) return
+    if (state.studyAnswerMode !== 'reveal' && !(state.studyAnswerMode === 'choice' && state.studyChoices.length < 2)) {
+      return
+    }
+    const ok = grade > 1
+    set({
+      studyGrade: grade,
+      studyResult: ok ? 'correct' : 'incorrect',
+      studyAttempts: state.studyAttempts + 1,
+      studyCorrect: state.studyCorrect + (ok ? 1 : 0),
+    })
+    emitAnswer(state, ok, grade)
+  },
+
+  setStudyQueue: (queue) => {
+    const state = get()
+    if (state.studyQueue === queue && state.studyMode) return
+    const question = makeQuestion({ ...state, studyQueue: queue }, state.studyKind, null, null)
+    set({
+      studyQueue: queue,
+      studyMode: true,
+      studyAttempts: 0,
+      studyCorrect: 0,
+      helpOpen: false,
+      hasSelected: state.hasSelected || question.selectedBoneId !== null,
+      ...question,
+    })
   },
 
   setLook: (look) => set({ look }),

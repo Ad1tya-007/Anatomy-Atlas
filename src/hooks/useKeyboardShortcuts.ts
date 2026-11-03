@@ -58,6 +58,10 @@ export function useKeyboardShortcuts(): void {
         store.setLook('radiograph')
         return
       }
+      if (event.key === '4') {
+        store.setLook('mastery')
+        return
+      }
       const key = event.key.toLowerCase()
       if (key === 'x') {
         const order = ['off', 'sagittal', 'coronal', 'transverse'] as const

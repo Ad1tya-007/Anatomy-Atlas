@@ -16,6 +16,7 @@ const SHORTCUTS = [
   ['1', 'Atlas look'],
   ['2', 'Ivory look'],
   ['3', 'Radiograph look'],
+  ['4', 'Mastery look'],
   ['X', 'Cycle section'],
   [',', 'Move the section toward the start side'],
   ['.', 'Move the section toward the far side'],
@@ -45,6 +46,11 @@ export function HelpDialog() {
               <li>Study mode can be limited to a region or a classification, and answered by choosing or typing.</li>
               <li>Walks step through a fixed path. Exit leaves the last structure selected.</li>
               <li>Atlas, Ivory, and Radiograph change the light, not the anatomy.</li>
+              <li>Mastery colors each bone by how likely you are to remember it, from your own study history.</li>
+              <li>
+                Review asks the questions that are due on your spaced-repetition schedule. Practice picks at random.
+                Both count toward your progress.
+              </li>
               <li>
                 Section keeps one side of a sagittal, coronal, or transverse cut. The slider uses the skeleton’s own
                 left, anterior, and superior.

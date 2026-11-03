@@ -1,4 +1,5 @@
 import { AnatomyScene } from '@/components/three/AnatomyScene/AnatomyScene'
+import { MasteryLegend } from '@/components/MasteryLegend/MasteryLegend'
 import { ModelErrorBoundary } from '@/components/ModelErrorBoundary'
 import { StudyCard } from '@/components/StudyMode/StudyMode'
 import { WalkCard } from '@/components/WalkCard/WalkCard'
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Spinner } from '@/components/ui/spinner'
 import { getBone } from '@/data/bones'
+import { useMasteryByBone } from '@/features/srs/useMastery'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import { useRef } from 'react'
 
@@ -21,7 +23,10 @@ export function Viewer() {
   const studyRevealed = useAnatomyStore((state) => state.studyRevealed)
   const studyAnswerMode = useAnatomyStore((state) => state.studyAnswerMode)
   const hasSelected = useAnatomyStore((state) => state.hasSelected)
+  const look = useAnatomyStore((state) => state.look)
+  const mastery = useMasteryByBone()
   const hoverName = getBone(hoveredBoneId)?.displayName
+  const hoverRecall = look === 'mastery' && hoveredBoneId ? mastery.get(hoveredBoneId) : undefined
   const hideHover = studyMode && !studyRevealed && studyAnswerMode !== 'locate'
   const showHover = Boolean(hoverName && hoveredBoneId !== selectedBoneId && !hideHover)
 
@@ -72,6 +77,11 @@ export function Viewer() {
       {showHover ? (
         <div className="pointer-events-none absolute top-4 left-4 z-10 rounded-lg border bg-card/92 px-2.5 py-1 text-[13px]">
           {hoverName}
+          {look === 'mastery' ? (
+            <span className="ml-2 font-mono text-[11px] text-muted-foreground">
+              {hoverRecall === undefined ? 'not studied' : `${Math.round(hoverRecall * 100)}% recall`}
+            </span>
+          ) : null}
         </div>
       ) : null}
       {modelState === 'ready' && !hasSelected ? (
@@ -79,6 +89,7 @@ export function Viewer() {
           Select a bone
         </p>
       ) : null}
+      {modelState === 'ready' ? <MasteryLegend /> : null}
       {modelState !== 'error' ? <ViewerControls container={container} /> : null}
       <StudyCard />
       <WalkCard />

@@ -15,6 +15,8 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./src/test/setup.ts'],
     restoreMocks: true,
+    // Day boundaries (streaks, daily limits) depend on the time zone.
+    env: { TZ: 'UTC' },
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'text', 'html', 'lcov', 'json-summary'],

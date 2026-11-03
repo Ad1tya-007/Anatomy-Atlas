@@ -233,9 +233,20 @@ export const walks: Walk[] = [
 
 const byId = new Map(walks.map((walk) => [walk.id, walk]))
 
+/** Walks built at runtime from the learner's own progress. Links leave them out because they are personal. */
+const generated = new Map<string, Walk>()
+
+export function setGeneratedWalk(walk: Walk): void {
+  generated.set(walk.id, walk)
+}
+
+export function isGeneratedWalk(id: string | null | undefined): boolean {
+  return Boolean(id && generated.has(id) && !byId.has(id))
+}
+
 export function getWalk(id: string | null | undefined): Walk | undefined {
   if (!id) return undefined
-  return byId.get(id)
+  return byId.get(id) ?? generated.get(id)
 }
 
 export function stopResolves(stop: WalkStop): boolean {

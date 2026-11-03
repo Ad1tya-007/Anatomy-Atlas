@@ -6,8 +6,11 @@ import { getJoint } from '@/data/joints'
 import { getLandmark } from '@/data/landmarks'
 import { currentViewUrl } from '@/hooks/useUrlSync'
 import { useAnatomyStore } from '@/store/anatomyStore'
-import { BookOpen, CircleHelp, Link2 } from 'lucide-react'
+import { BarChart3, BookOpen, CircleHelp, Link2 } from 'lucide-react'
+import { lazy, Suspense, useState } from 'react'
 import { toast } from 'sonner'
+
+const ProgressDialog = lazy(() => import('@/components/ProgressDialog/ProgressDialog'))
 
 async function copyViewLink(): Promise<void> {
   try {
@@ -27,6 +30,8 @@ export function Header() {
   const enterStudy = useAnatomyStore((state) => state.enterStudy)
   const exitStudy = useAnatomyStore((state) => state.exitStudy)
   const setHelpOpen = useAnatomyStore((state) => state.setHelpOpen)
+  const [progressOpen, setProgressOpen] = useState(false)
+  const [progressLoaded, setProgressLoaded] = useState(false)
   const hideName = studyMode && !studyRevealed
   const readout = hideName
     ? null
@@ -79,6 +84,23 @@ export function Header() {
               type="button"
               variant="outline"
               size="icon"
+              aria-label="Open your progress"
+              onClick={() => {
+                setProgressLoaded(true)
+                setProgressOpen(true)
+              }}
+            >
+              <BarChart3 />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Progress and mastery</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
               aria-label="Copy link to this view"
               onClick={copyViewLink}
             >
@@ -102,6 +124,11 @@ export function Header() {
           <TooltipContent>Controls</TooltipContent>
         </Tooltip>
       </div>
+      {progressLoaded ? (
+        <Suspense fallback={null}>
+          <ProgressDialog open={progressOpen} onOpenChange={setProgressOpen} />
+        </Suspense>
+      ) : null}
     </header>
   )
 }

@@ -196,6 +196,60 @@ function markerEstimate(records: LandmarkRecord[]): number {
   return records.reduce((count, record) => count + (record.landmark.bothSides ? 2 : 1), 0)
 }
 
+/** Landmarks in scope, falling back to the whole skeleton when the scope has none. */
+function scopedLandmarks(config: StudyConfig): { records: LandmarkRecord[]; fallback: boolean } {
+  const pool = studyPool(config)
+  const records = quizLandmarks(pool.bones)
+  if (records.length > 0) return { records, fallback: pool.fallback }
+  return { records: quizLandmarks(quizBones()), fallback: true }
+}
+
+/** Locate mode with too many markers keeps only one region's landmarks on screen. */
+function narrowForLocate(
+  records: LandmarkRecord[],
+  region: AnatomicalRegion,
+): { records: LandmarkRecord[]; narrowed: boolean } {
+  if (markerEstimate(records) <= LOCATE_MARKER_LIMIT) return { records, narrowed: false }
+  const regional = records.filter((record) => getBone(record.boneId)?.region === region)
+  return regional.length > 0 ? { records: regional, narrowed: true } : { records, narrowed: false }
+}
+
+function landmarkQuestion(
+  config: StudyConfig,
+  picked: LandmarkRecord | undefined,
+  records: LandmarkRecord[],
+  fallback: boolean,
+  narrowed: boolean,
+  rng: Rng,
+): StudyQuestion {
+  const correct = picked ?? getLandmark(FALLBACK_LANDMARK_ID)
+  const choice = config.studyAnswerMode === 'choice'
+  return {
+    kind: 'landmark',
+    boneId: picked?.boneId ?? FALLBACK_BONE_ID,
+    landmarkId: picked?.landmark.id ?? FALLBACK_LANDMARK_ID,
+    choices: choice && correct ? landmarkChoiceLabels(correct, records, quizLandmarks(quizBones()), rng) : [],
+    fallback,
+    locateNarrowed: narrowed,
+    locateLandmarkIds: config.studyAnswerMode === 'locate' ? records.map((record) => record.landmark.id) : [],
+  }
+}
+
+function boneQuestion(config: StudyConfig, bone: Bone | undefined, scoped: Bone[], fallback: boolean, rng: Rng) {
+  const allBones = quizBones()
+  const boneId = bone?.id ?? allBones[0]?.id ?? FALLBACK_BONE_ID
+  const resolved = bone ?? getBone(boneId)
+  return {
+    kind: 'bone' as const,
+    boneId,
+    landmarkId: null,
+    choices: config.studyAnswerMode === 'choice' && resolved ? boneChoiceLabels(resolved, scoped, allBones, rng) : [],
+    fallback,
+    locateNarrowed: false,
+    locateLandmarkIds: [],
+  }
+}
+
 export function buildQuestion(
   config: StudyConfig,
   kind: StudyKind,
@@ -203,52 +257,51 @@ export function buildQuestion(
   excludeLandmark: string | null,
   rng: Rng = Math.random,
 ): StudyQuestion {
-  const pool = studyPool(config)
-  const allBones = quizBones()
-  const locate = config.studyAnswerMode === 'locate'
-  const choice = config.studyAnswerMode === 'choice'
-
   if (kind === 'landmark') {
-    let records = quizLandmarks(pool.bones)
-    let fallback = pool.fallback
-    if (records.length === 0) {
-      records = quizLandmarks(allBones)
-      fallback = true
-    }
-    let narrowed = false
-    if (locate && markerEstimate(records) > LOCATE_MARKER_LIMIT) {
-      const region = config.studyRegionId ?? defaultStudyRegion(config.activeRegion)
-      const regional = records.filter((record) => getBone(record.boneId)?.region === region)
-      if (regional.length > 0) {
-        records = regional
-        narrowed = true
-      }
-    }
+    const scoped = scopedLandmarks(config)
+    const region = config.studyRegionId ?? defaultStudyRegion(config.activeRegion)
+    const { records, narrowed } =
+      config.studyAnswerMode === 'locate'
+        ? narrowForLocate(scoped.records, region)
+        : { records: scoped.records, narrowed: false }
     const picked = pickOne(records, (record) => record.landmark.id === excludeLandmark, rng)
-    const correct = picked ?? getLandmark(FALLBACK_LANDMARK_ID)
-    return {
-      kind,
-      boneId: picked?.boneId ?? FALLBACK_BONE_ID,
-      landmarkId: picked?.landmark.id ?? FALLBACK_LANDMARK_ID,
-      choices: choice && correct ? landmarkChoiceLabels(correct, records, quizLandmarks(allBones), rng) : [],
-      fallback,
-      locateNarrowed: narrowed,
-      locateLandmarkIds: locate ? records.map((record) => record.landmark.id) : [],
-    }
+    return landmarkQuestion(config, picked, records, scoped.fallback, narrowed, rng)
   }
-
+  const pool = studyPool(config)
   const picked = pickOne(pool.bones, (bone) => bone.id === excludeBone, rng)
-  const boneId = picked?.id ?? allBones[0]?.id ?? FALLBACK_BONE_ID
-  const bone = picked ?? getBone(boneId)
-  return {
-    kind,
-    boneId,
-    landmarkId: null,
-    choices: choice && bone ? boneChoiceLabels(bone, pool.bones, allBones, rng) : [],
-    fallback: pool.fallback,
-    locateNarrowed: false,
-    locateLandmarkIds: [],
+  return boneQuestion(config, picked, pool.bones, pool.fallback, rng)
+}
+
+/** Builds the question for one specific structure, as review mode does for the next due card. */
+export function buildQuestionFor(
+  config: StudyConfig,
+  target: { boneId: string; landmarkId: string | null },
+  rng: Rng = Math.random,
+): StudyQuestion {
+  const record = target.landmarkId ? getLandmark(target.landmarkId) : undefined
+  if (record) {
+    const scoped = scopedLandmarks(config)
+    const pool = scoped.records.some((item) => item.landmark.id === record.landmark.id)
+      ? scoped.records
+      : [record, ...scoped.records]
+    const region = getBone(record.boneId)?.region ?? defaultStudyRegion(config.activeRegion)
+    const { records, narrowed } =
+      config.studyAnswerMode === 'locate' ? narrowForLocate(pool, region) : { records: pool, narrowed: false }
+    return landmarkQuestion(config, record, records, scoped.fallback, narrowed, rng)
   }
+  const pool = studyPool(config)
+  return boneQuestion(config, getBone(target.boneId), pool.bones, pool.fallback, rng)
+}
+
+/** Card ids in scope for a question kind, in a stable order. */
+export function scopeCardTargets(
+  config: StudyConfig,
+  kind: StudyKind,
+): Array<{ boneId: string; landmarkId: string | null }> {
+  if (kind === 'landmark') {
+    return scopedLandmarks(config).records.map((record) => ({ boneId: record.boneId, landmarkId: record.landmark.id }))
+  }
+  return studyPool(config).bones.map((bone) => ({ boneId: bone.id, landmarkId: null }))
 }
 
 export function correctLabel(kind: StudyKind, boneId: string | null, landmarkId: string | null): string | null {

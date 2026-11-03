@@ -1,3 +1,4 @@
+import { setGeneratedWalk } from '@/data/walks'
 import { CAMERA_PRESETS } from '@/utils/camera'
 import { decodeView, encodeView, hasView, viewFromState, type ShareableState } from '@/utils/urlState'
 import type { ViewState } from '@/types/anatomy'
@@ -155,6 +156,22 @@ describe('viewFromState', () => {
       walkId: 'shoulder_to_hand',
       walkIndex: 3,
     })
+  })
+
+  it('shares the current bone of a personal walk, not the walk itself', () => {
+    setGeneratedWalk({
+      id: 'weakest-areas',
+      title: 'Weakest',
+      summary: '',
+      stops: [{ boneId: 'tibia_left', text: '' }],
+    })
+    expect(viewFromState({ ...idle, selectedBoneId: 'tibia_left', walkId: 'weakest-areas', walkIndex: 0 })).toEqual({
+      boneId: 'tibia_left',
+    })
+  })
+
+  it('round-trips the mastery look', () => {
+    expect(decodeView(encodeView({ look: 'mastery' }))).toEqual({ look: 'mastery' })
   })
 
   it('never reveals the answer to an open study question', () => {

@@ -20,6 +20,7 @@ const LOOKS: Array<{ id: LookName; label: string }> = [
   { id: 'atlas', label: 'Atlas' },
   { id: 'ivory', label: 'Ivory' },
   { id: 'radiograph', label: 'Radiograph' },
+  { id: 'mastery', label: 'Mastery' },
 ]
 
 const SECTIONS: Array<{ id: SectionAxis; label: string }> = [
@@ -167,11 +168,7 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
         <div className="flex items-center gap-1">
           <ButtonGroup aria-label="Look">
             {LOOKS.map((item) => (
-              <Hint
-                key={item.id}
-                label={`${item.label} look`}
-                shortcut={item.id === 'atlas' ? '1' : item.id === 'ivory' ? '2' : '3'}
-              >
+              <Hint key={item.id} label={`${item.label} look`} shortcut={String(LOOKS.indexOf(item) + 1)}>
                 <Button
                   type="button"
                   variant={look === item.id ? 'default' : 'ghost'}

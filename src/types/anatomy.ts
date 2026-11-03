@@ -127,7 +127,10 @@ export type StudyScope = 'all' | 'region' | 'classification'
 
 export type StudyAnswerMode = 'reveal' | 'choice' | 'type' | 'locate'
 
-export type LookName = 'atlas' | 'ivory' | 'radiograph'
+/** Practice picks at random. Review follows the spaced-repetition schedule. */
+export type StudyQueue = 'practice' | 'review'
+
+export type LookName = 'atlas' | 'ivory' | 'radiograph' | 'mastery'
 
 export type SectionAxis = 'off' | 'sagittal' | 'coronal' | 'transverse'
 

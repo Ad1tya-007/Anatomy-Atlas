@@ -1,4 +1,5 @@
 import { CameraController } from '@/components/three/CameraController/CameraController'
+import { MasteryPaint } from '@/components/three/MasteryPaint/MasteryPaint'
 import { OrientationIndicator } from '@/components/three/OrientationIndicator/OrientationIndicator'
 import { SkeletonModel } from '@/components/three/SkeletonModel/SkeletonModel'
 import { useAnatomyStore } from '@/store/anatomyStore'
@@ -48,6 +49,16 @@ const LOOK_LIGHTS: Record<
     fill: ['#6a7a82', 0.08],
     back: ['#8aa0a8', 0.12],
     rim: ['#d5e4ea', 0.55],
+  },
+  // Neutral white light so the mastery colors read true.
+  mastery: {
+    background: '#0d1013',
+    hemisphere: ['#ffffff', '#30353a', 0.9],
+    ambient: 0.32,
+    key: ['#ffffff', 1.45],
+    fill: ['#e4e9ee', 0.45],
+    back: ['#ffffff', 0.35],
+    rim: ['#ffffff', 0.3],
   },
 }
 
@@ -133,6 +144,7 @@ function SceneContents() {
       <color attach="background" args={['#0B0D10']} />
       <fog attach="fog" args={['#0B0D10', 6.5, 14]} />
       <SpecimenLights />
+      <MasteryPaint />
       <Suspense fallback={null}>
         <SkeletonModel />
       </Suspense>
