@@ -11,3 +11,7 @@ test-results
 
 *.md
 !README.md
+.vercel
+
+# Local perf measurements (summaries live in docs/perf.md)
+perf/
