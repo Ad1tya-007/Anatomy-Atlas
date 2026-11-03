@@ -18,7 +18,11 @@
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test:coverage",
-    "perf": "tsx scripts/perf.ts"
+    "perf": "tsx scripts/perf.ts",
+    "db:start": "supabase start -x realtime,storage-api,imgproxy,studio,edge-runtime,logflare,vector,supavisor,postgres-meta",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase db lint --level warning --fail-on warning && supabase test db"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.166",
