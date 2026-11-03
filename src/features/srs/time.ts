@@ -28,3 +28,9 @@ export function formatUntil(target: Date, now: Date): string {
   const days = Math.round(hours / 24)
   return `in ${days} days`
 }
+
+/** "just now", "4 min ago", "2 hours ago", "3 days ago". */
+export function formatAgo(past: Date, now: Date): string {
+  const span = formatUntil(now, past)
+  return span === 'now' ? 'just now' : `${span.replace(/^in /, '')} ago`
+}

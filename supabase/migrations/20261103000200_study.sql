@@ -86,7 +86,8 @@ revoke all on table public.cards from anon, authenticated;
 grant select, delete on table public.cards to authenticated;
 grant insert (card_id, state, due_at, last_review_at, stability, difficulty, reps, lapses)
   on table public.cards to authenticated;
-grant update (state, due_at, last_review_at, stability, difficulty, reps, lapses)
+-- PostgREST upserts set every column they send, including the card_id they conflict on.
+grant update (card_id, state, due_at, last_review_at, stability, difficulty, reps, lapses)
   on table public.cards to authenticated;
 
 create policy "Learners can read their own cards"

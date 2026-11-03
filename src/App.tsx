@@ -8,6 +8,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useSpacedRepetition } from '@/features/srs/useSpacedRepetition'
+import { useSync } from '@/features/sync/useSync'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useUrlSync } from '@/hooks/useUrlSync'
 import { useAnatomyStore } from '@/store/anatomyStore'
@@ -65,6 +66,7 @@ export default function App() {
   useKeyboardShortcuts()
   useUrlSync()
   useSpacedRepetition()
+  useSync()
   return (
     <TooltipProvider>
       <div className="flex h-dvh flex-col overflow-hidden bg-background font-sans text-foreground">

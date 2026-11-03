@@ -1,3 +1,4 @@
+import { AccountButton } from '@/components/AccountButton/AccountButton'
 import { SearchField } from '@/components/Search/SearchField'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -123,6 +124,7 @@ export function Header() {
           </TooltipTrigger>
           <TooltipContent>Controls</TooltipContent>
         </Tooltip>
+        <AccountButton />
       </div>
       {progressLoaded ? (
         <Suspense fallback={null}>

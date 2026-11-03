@@ -6,6 +6,7 @@ import {
   answerIsCorrect,
   boneChoiceLabels,
   buildQuestion,
+  buildQuestionFor,
   correctLabel,
   defaultStudyRegion,
   fillDistractors,
@@ -15,6 +16,7 @@ import {
   normalizeAnswer,
   pickOne,
   quizLandmarks,
+  scopeCardTargets,
   shuffle,
   studyPool,
   type StudyConfig,
@@ -256,6 +258,67 @@ describe('buildQuestion', () => {
       const size = quizBones().filter((bone) => bone.classification === classification).length
       const config: StudyConfig = { ...baseConfig, studyScope: 'classification', studyClassification: classification }
       expect(buildQuestion(config, 'bone', null, null, seededRng(5)).fallback).toBe(size < MIN_SCOPE_SIZE)
+    },
+  )
+})
+
+describe('buildQuestionFor', () => {
+  const trochanter = 'femur_left_greater_trochanter'
+
+  it('asks about the scheduled bone', () => {
+    for (const seed of SEEDS.slice(0, 30)) {
+      const question = buildQuestionFor(baseConfig, { boneId: 'femur_left', landmarkId: null }, seededRng(seed))
+      expect(question).toMatchObject({ kind: 'bone', boneId: 'femur_left', landmarkId: null })
+      expectValidChoices(question.choices, 'Femur')
+    }
+  })
+
+  it('asks about the scheduled landmark', () => {
+    const question = buildQuestionFor(baseConfig, { boneId: 'femur_left', landmarkId: trochanter }, seededRng(4))
+    expect(question).toMatchObject({ kind: 'landmark', boneId: 'femur_left', landmarkId: trochanter })
+    expectValidChoices(question.choices, getLandmark(trochanter)!.landmark.name)
+  })
+
+  it('still asks a due landmark that is outside the current scope', () => {
+    const config: StudyConfig = { ...baseConfig, studyScope: 'region', studyRegionId: 'head' }
+    for (const seed of SEEDS.slice(0, 30)) {
+      const question = buildQuestionFor(config, { boneId: 'femur_left', landmarkId: trochanter }, seededRng(seed))
+      expect(question.landmarkId).toBe(trochanter)
+      expectValidChoices(question.choices, getLandmark(trochanter)!.landmark.name)
+    }
+  })
+
+  it('shows the scheduled landmark among the locate markers, narrowed to its region', () => {
+    const config: StudyConfig = { ...baseConfig, studyAnswerMode: 'locate', activeRegion: 'head' }
+    const question = buildQuestionFor(config, { boneId: 'femur_left', landmarkId: trochanter }, seededRng(2))
+    expect(question.locateLandmarkIds).toContain(trochanter)
+    expect(question.locateNarrowed).toBe(true)
+    for (const id of question.locateLandmarkIds) expect(getBone(getLandmark(id)!.boneId)?.region).toBe('lower-limb')
+  })
+})
+
+describe('scopeCardTargets', () => {
+  it('lists every quiz bone or quiz landmark in scope once', () => {
+    const bones = scopeCardTargets(baseConfig, 'bone')
+    expect(bones.map((target) => target.boneId)).toEqual(quizBones().map((bone) => bone.id))
+    const landmarks = scopeCardTargets(baseConfig, 'landmark')
+    expect(landmarks.map((target) => target.landmarkId)).toEqual(
+      quizLandmarks(quizBones()).map((record) => record.landmark.id),
+    )
+  })
+
+  it('follows the region scope', () => {
+    const config: StudyConfig = { ...baseConfig, studyScope: 'region', studyRegionId: 'lower-limb' }
+    for (const target of scopeCardTargets(config, 'landmark')) {
+      expect(getBone(target.boneId)?.region).toBe('lower-limb')
+    }
+  })
+
+  it.each<BoneClassification>(['long', 'short', 'flat', 'irregular', 'sesamoid'])(
+    'never leaves the %s class without landmark cards',
+    (classification) => {
+      const config: StudyConfig = { ...baseConfig, studyScope: 'classification', studyClassification: classification }
+      expect(scopeCardTargets(config, 'landmark').length).toBeGreaterThan(0)
     },
   )
 })

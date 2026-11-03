@@ -134,14 +134,20 @@ select throws_ok(
 select lives_ok(
   $$ insert into public.cards (card_id, state, due_at, last_review_at, stability, difficulty, reps, lapses)
      values ('bone:femur_left', 2, now() + interval '3 days', now(), 3.2, 5.1, 1, 0)
-     on conflict (user_id, card_id) do update set due_at = excluded.due_at, reps = excluded.reps $$,
-  'a learner can upsert a card snapshot'
+     on conflict (user_id, card_id) do update set
+       card_id = excluded.card_id, state = excluded.state, due_at = excluded.due_at,
+       last_review_at = excluded.last_review_at, stability = excluded.stability,
+       difficulty = excluded.difficulty, reps = excluded.reps, lapses = excluded.lapses $$,
+  'a learner can upsert a card snapshot the way PostgREST does'
 );
 
 select lives_ok(
   $$ insert into public.cards (card_id, state, due_at, last_review_at, stability, difficulty, reps, lapses)
      values ('bone:femur_left', 2, now() + interval '9 days', now(), 8.4, 5.0, 2, 0)
-     on conflict (user_id, card_id) do update set due_at = excluded.due_at, reps = excluded.reps $$,
+     on conflict (user_id, card_id) do update set
+       card_id = excluded.card_id, state = excluded.state, due_at = excluded.due_at,
+       last_review_at = excluded.last_review_at, stability = excluded.stability,
+       difficulty = excluded.difficulty, reps = excluded.reps, lapses = excluded.lapses $$,
   'upserting the same card updates it'
 );
 

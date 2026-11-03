@@ -58,7 +58,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   database:
-    name: Database migrations and RLS tests
+    name: Database, RLS, and sync integration tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -68,10 +68,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - name: Start Postgres and Auth with every migration applied
-        run: npx supabase start -x realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Start Postgres, Auth, and the Data API with every migration applied
+        run: npx supabase start -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
       - name: Schema lint and pgTAP tests
         run: npm run db:test
+      - name: Sync integration tests against the local API
+        run: npm run test:integration
 
   migrate:
     name: Apply migrations to the hosted database

@@ -10,6 +10,8 @@ interface SrsState {
   cards: Map<string, SrsCard>
   scheduler: Scheduler | null
   load: () => Promise<void>
+  /** Re-reads the log from storage, for when something else changed it. */
+  reload: () => Promise<void>
   record: (answer: StudyAnswer, at?: Date) => Promise<ReviewEvent | null>
   /** Adds events from another device. Returns how many were new. */
   merge: (events: readonly ReviewEvent[]) => Promise<number>
@@ -52,6 +54,11 @@ export const useSrsStore = create<SrsState>((set, get) => ({
       }
     })()
     return loading
+  },
+
+  reload: () => {
+    loading = null
+    return get().load()
   },
 
   record: async (answer, at = new Date()) => {
