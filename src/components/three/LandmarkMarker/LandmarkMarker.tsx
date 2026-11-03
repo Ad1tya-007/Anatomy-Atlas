@@ -33,7 +33,11 @@ function Marker({
 
   useFrame(() => {
     const offset = spreadOffsetForId(marker.boneId, spreadNow())
-    group.current?.position.set(marker.position[0] + offset[0], marker.position[1] + offset[1], marker.position[2] + offset[2])
+    group.current?.position.set(
+      marker.position[0] + offset[0],
+      marker.position[1] + offset[1],
+      marker.position[2] + offset[2],
+    )
   })
 
   if (!record) return null
@@ -41,7 +45,12 @@ function Marker({
   const choose = (event: { stopPropagation: () => void }) => {
     event.stopPropagation()
     const store = useAnatomyStore.getState()
-    if (store.studyMode && !store.studyRevealed && store.studyAnswerMode === 'locate' && store.studyKind === 'landmark') {
+    if (
+      store.studyMode &&
+      !store.studyRevealed &&
+      store.studyAnswerMode === 'locate' &&
+      store.studyKind === 'landmark'
+    ) {
       store.submitStudyLocate({ landmarkId: marker.landmarkId })
       return
     }
@@ -77,7 +86,12 @@ function Marker({
             type="button"
             onClick={() => {
               const store = useAnatomyStore.getState()
-              if (store.studyMode && !store.studyRevealed && store.studyAnswerMode === 'locate' && store.studyKind === 'landmark') {
+              if (
+                store.studyMode &&
+                !store.studyRevealed &&
+                store.studyAnswerMode === 'locate' &&
+                store.studyKind === 'landmark'
+              ) {
                 store.submitStudyLocate({ landmarkId: marker.landmarkId })
                 return
               }
@@ -170,7 +184,9 @@ export function LandmarkLayer({ index, bounds }: { index: SkeletonIndex; bounds:
             key={`${marker.landmarkId}:${markerIndex}`}
             marker={marker}
             active={active}
-            showLabel={showLabels && !(studyMode && !studyRevealed) && (active || marker.landmarkId === hoveredLandmarkId)}
+            showLabel={
+              showLabels && !(studyMode && !studyRevealed) && (active || marker.landmarkId === hoveredLandmarkId)
+            }
             onHover={setHoveredLandmarkId}
           />
         )

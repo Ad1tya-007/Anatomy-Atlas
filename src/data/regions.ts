@@ -133,10 +133,7 @@ export const navRegions: NavRegion[] = [
   },
 ]
 
-export const REGION_FOCUS: Record<
-  string,
-  { position: [number, number, number]; target: [number, number, number] }
-> = {
+export const REGION_FOCUS: Record<string, { position: [number, number, number]; target: [number, number, number] }> = {
   head: { position: [0.55, 0.95, 0.85], target: [0, 0.78, 0.02] },
   'vertebral-column': { position: [0.85, 0.35, 1.15], target: [0, 0.15, -0.02] },
   thorax: { position: [0.7, 0.45, 1.25], target: [0, 0.32, 0.02] },

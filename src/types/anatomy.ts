@@ -1,11 +1,5 @@
 export type AnatomicalRegion =
-  | 'head'
-  | 'vertebral-column'
-  | 'thorax'
-  | 'shoulder-girdle'
-  | 'upper-limb'
-  | 'pelvis'
-  | 'lower-limb'
+  'head' | 'vertebral-column' | 'thorax' | 'shoulder-girdle' | 'upper-limb' | 'pelvis' | 'lower-limb'
 
 export type BoneClassification = 'long' | 'short' | 'flat' | 'irregular' | 'sesamoid'
 
@@ -77,6 +71,11 @@ export type CameraPresetName = 'default' | 'front' | 'back' | 'left' | 'right' |
 
 export type Vec3 = [number, number, number]
 
+export interface CameraPose {
+  position: Vec3
+  target: Vec3
+}
+
 export interface CameraRequest {
   id: number
   kind: 'preset' | 'focus'
@@ -133,6 +132,21 @@ export type LookName = 'atlas' | 'ivory' | 'radiograph'
 export type SectionAxis = 'off' | 'sagittal' | 'coronal' | 'transverse'
 
 export type StudyResult = 'correct' | 'incorrect'
+
+/** The shareable part of the viewer state. Every field is optional so partial links still restore. */
+export interface ViewState {
+  boneId?: string
+  landmarkId?: string
+  jointId?: string
+  jointSide?: 'left' | 'right'
+  look?: LookName
+  sectionAxis?: Exclude<SectionAxis, 'off'>
+  sectionAmount?: number
+  spread?: number
+  walkId?: string
+  walkIndex?: number
+  camera?: CameraPose
+}
 
 export interface SelectBoneOptions {
   landmarkId?: string | null

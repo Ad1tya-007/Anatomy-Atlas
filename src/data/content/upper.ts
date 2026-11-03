@@ -72,19 +72,22 @@ export const upperBones: Bone[] = [
       {
         suffix: 'spine',
         name: 'Spine',
-        description: 'A prominent ridge on the posterior surface that divides the supra- and infraspinous fossae and continues laterally as the acromion.',
+        description:
+          'A prominent ridge on the posterior surface that divides the supra- and infraspinous fossae and continues laterally as the acromion.',
         anchor: [0.55, 0.72, 0.08],
       },
       {
         suffix: 'acromion',
         name: 'Acromion',
-        description: 'The flattened lateral end of the spine. It articulates with the clavicle and roofs the shoulder joint.',
+        description:
+          'The flattened lateral end of the spine. It articulates with the clavicle and roofs the shoulder joint.',
         anchor: [0.92, 0.82, 0.35],
       },
       {
         suffix: 'coracoid',
         name: 'Coracoid process',
-        description: 'A hook-like process projecting anteriorly. Pectoralis minor, coracobrachialis, and the short head of biceps attach here.',
+        description:
+          'A hook-like process projecting anteriorly. Pectoralis minor, coracobrachialis, and the short head of biceps attach here.',
         anchor: [0.7, 0.7, 0.9],
       },
       {
@@ -151,7 +154,8 @@ export const upperBones: Bone[] = [
       {
         suffix: 'trochlea',
         name: 'Trochlea',
-        description: 'The spool-shaped medial part of the condyle. It articulates with the trochlear notch of the ulna.',
+        description:
+          'The spool-shaped medial part of the condyle. It articulates with the trochlear notch of the ulna.',
         anchor: [0.22, 0.05, 0.62],
       },
       {
@@ -181,7 +185,8 @@ export const upperBones: Bone[] = [
       {
         suffix: 'head',
         name: 'Head',
-        description: 'The proximal disc. Its superior surface meets the capitulum and its circumference meets the radial notch of the ulna.',
+        description:
+          'The proximal disc. Its superior surface meets the capitulum and its circumference meets the radial notch of the ulna.',
         anchor: [0.45, 0.97, 0.55],
       },
       {
@@ -199,7 +204,8 @@ export const upperBones: Bone[] = [
       {
         suffix: 'styloid',
         name: 'Styloid process',
-        description: 'The pointed lateral end of the distal radius. It projects farther distally than the ulnar styloid.',
+        description:
+          'The pointed lateral end of the distal radius. It projects farther distally than the ulnar styloid.',
         anchor: [0.92, 0.04, 0.55],
       },
     ],
@@ -250,14 +256,16 @@ export const upperBones: Bone[] = [
       {
         suffix: 'tubercle',
         name: 'Tubercle',
-        description: 'A palmar prominence, palpable in the anatomical snuffbox region, that gives attachment to the flexor retinaculum.',
+        description:
+          'A palmar prominence, palpable in the anatomical snuffbox region, that gives attachment to the flexor retinaculum.',
         anchor: [0.7, 0.35, 0.9],
       },
       {
         suffix: 'waist',
         name: 'Waist',
         description: 'The narrowed middle of the bone, the usual site of a scaphoid fracture.',
-        significance: 'Blood supply enters largely from the distal end, so a waist fracture can leave the proximal pole at risk of avascular necrosis.',
+        significance:
+          'Blood supply enters largely from the distal end, so a waist fracture can leave the proximal pole at risk of avascular necrosis.',
         anchor: [0.5, 0.55, 0.5],
       },
     ],
@@ -362,7 +370,8 @@ export const upperBones: Bone[] = [
       {
         suffix: 'hook',
         name: 'Hook',
-        description: 'The hamulus, a palmar projection that anchors the flexor retinaculum and is palpable in the hypothenar region.',
+        description:
+          'The hamulus, a palmar projection that anchors the flexor retinaculum and is palpable in the hypothenar region.',
         significance: 'The ulnar nerve passes just lateral to the hook and can be compressed there.',
         anchor: [0.45, 0.4, 0.92],
       },
@@ -402,7 +411,8 @@ export const upperBones: Bone[] = [
       {
         suffix: 'first',
         name: 'First metacarpal',
-        description: 'The metacarpal of the thumb. It is shorter and set apart from the others so the thumb can oppose.',
+        description:
+          'The metacarpal of the thumb. It is shorter and set apart from the others so the thumb can oppose.',
         mesh: '1st metacarpal bone.r',
         anchor: [0.55, 0.5, 0.6],
       },
@@ -436,7 +446,8 @@ export const upperBones: Bone[] = [
       {
         suffix: 'distal',
         name: 'Distal phalanx',
-        description: 'The bone of the fingertip. Its palmar surface supports the pulp, and its dorsal surface supports the nail.',
+        description:
+          'The bone of the fingertip. Its palmar surface supports the pulp, and its dorsal surface supports the nail.',
         mesh: 'Distal phalanx of 3d finger.r',
         anchor: [0.5, 0.35, 0.6],
       },

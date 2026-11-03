@@ -13,8 +13,7 @@ export const headBones: Bone[] = [
     quiz: true,
     alternateNames: ['os frontale'],
     keywords: ['skull', 'cranium', 'forehead', 'orbit'],
-    description:
-      'The frontal bone forms the forehead, the roof of each orbit, and the anterior cranial fossa.',
+    description: 'The frontal bone forms the forehead, the roof of each orbit, and the anterior cranial fossa.',
     articulations: ['Parietal bones', 'Sphenoid', 'Zygomatic bones', 'Maxillae', 'Nasal bones', 'Ethmoid'],
     landmarks: [
       {
@@ -32,7 +31,8 @@ export const headBones: Bone[] = [
       {
         suffix: 'supraorbital',
         name: 'Supraorbital margin',
-        description: 'The superior rim of the orbit. It often carries a supraorbital notch or foramen for the supraorbital nerve and vessels.',
+        description:
+          'The superior rim of the orbit. It often carries a supraorbital notch or foramen for the supraorbital nerve and vessels.',
         anchor: [0.28, 0.12, 0.9],
       },
       {
@@ -46,7 +46,7 @@ export const headBones: Bone[] = [
   ...paired('parietal', 'Parietal bone', {
     region: 'head',
     classification: 'flat',
-    primaryMesh: 'Parietal bone right',
+    primaryMesh: { left: 'Parietal bone left', right: 'Parietal bone right' },
     quiz: true,
     alternateNames: ['os parietale'],
     keywords: ['skull', 'cranium', 'calvaria'],
@@ -81,7 +81,8 @@ export const headBones: Bone[] = [
       {
         suffix: 'mastoid',
         name: 'Mastoid process',
-        description: 'A blunt inferior projection posterior to the ear, palpable behind the auricle. Sternocleidomastoid attaches here.',
+        description:
+          'A blunt inferior projection posterior to the ear, palpable behind the auricle. Sternocleidomastoid attaches here.',
         significance: 'The mastoid air cells lie within it and communicate with the middle ear.',
         anchor: [0.7, 0.08, 0.22],
       },
@@ -94,7 +95,8 @@ export const headBones: Bone[] = [
       {
         suffix: 'zygomatic_process',
         name: 'Zygomatic process',
-        description: 'A long anterior projection that, with the temporal process of the zygomatic bone, forms the zygomatic arch.',
+        description:
+          'A long anterior projection that, with the temporal process of the zygomatic bone, forms the zygomatic arch.',
         anchor: [0.85, 0.55, 0.7],
       },
       {
@@ -129,7 +131,8 @@ export const headBones: Bone[] = [
       {
         suffix: 'foramen_magnum',
         name: 'Foramen magnum',
-        description: 'The large opening that transmits the medulla oblongata, meninges, vertebral arteries, and spinal roots of the accessory nerve.',
+        description:
+          'The large opening that transmits the medulla oblongata, meninges, vertebral arteries, and spinal roots of the accessory nerve.',
         anchor: [0.5, 0.18, 0.42],
       },
       {
@@ -170,7 +173,8 @@ export const headBones: Bone[] = [
       {
         suffix: 'sella',
         name: 'Sella turcica',
-        description: 'A saddle-shaped depression on the superior surface. The hypophyseal fossa holds the pituitary gland.',
+        description:
+          'A saddle-shaped depression on the superior surface. The hypophyseal fossa holds the pituitary gland.',
         anchor: [0.5, 0.55, 0.48],
       },
       {
@@ -182,13 +186,15 @@ export const headBones: Bone[] = [
       {
         suffix: 'lesser_wing',
         name: 'Lesser wing',
-        description: 'A thin superior plate that forms part of the anterior cranial fossa and the posterior orbital roof.',
+        description:
+          'A thin superior plate that forms part of the anterior cranial fossa and the posterior orbital roof.',
         anchor: [0.32, 0.82, 0.7],
       },
       {
         suffix: 'pterygoid',
         name: 'Pterygoid process',
-        description: 'A paired inferior projection with medial and lateral plates. Muscles of mastication attach to the lateral plate.',
+        description:
+          'A paired inferior projection with medial and lateral plates. Muscles of mastication attach to the lateral plate.',
         anchor: [0.34, 0.08, 0.4],
       },
     ],
@@ -206,7 +212,16 @@ export const headBones: Bone[] = [
     keywords: ['skull', 'nasal cavity', 'cribriform plate'],
     description:
       'A delicate midline bone between the orbits. It forms part of the nasal cavity, the nasal septum, and the medial orbital wall.',
-    articulations: ['Frontal', 'Sphenoid', 'Vomer', 'Inferior nasal conchae', 'Maxillae', 'Palatines', 'Lacrimals', 'Nasals'],
+    articulations: [
+      'Frontal',
+      'Sphenoid',
+      'Vomer',
+      'Inferior nasal conchae',
+      'Maxillae',
+      'Palatines',
+      'Lacrimals',
+      'Nasals',
+    ],
     landmarks: [
       {
         suffix: 'cribriform',
@@ -273,7 +288,8 @@ export const headBones: Bone[] = [
       {
         suffix: 'angle',
         name: 'Angle',
-        description: 'The junction of the posterior border of the ramus and the inferior border of the body. Masseter and medial pterygoid attach here.',
+        description:
+          'The junction of the posterior border of the ramus and the inferior border of the body. Masseter and medial pterygoid attach here.',
         anchor: [0.12, 0.28, 0.22],
       },
       {
@@ -305,7 +321,17 @@ export const headBones: Bone[] = [
     keywords: ['skull', 'face', 'upper jaw'],
     description:
       'The paired maxillae form the upper jaw, most of the hard palate, the floor of the orbit, and much of the lateral wall of the nasal cavity.',
-    articulations: ['Opposite maxilla', 'Frontal', 'Zygomatic', 'Nasal', 'Lacrimal', 'Ethmoid', 'Palatine', 'Vomer', 'Inferior nasal concha'],
+    articulations: [
+      'Opposite maxilla',
+      'Frontal',
+      'Zygomatic',
+      'Nasal',
+      'Lacrimal',
+      'Ethmoid',
+      'Palatine',
+      'Vomer',
+      'Inferior nasal concha',
+    ],
     landmarks: [
       {
         suffix: 'alveolar',
@@ -386,7 +412,8 @@ export const headBones: Bone[] = [
     primaryMesh: 'Lacrimal bone.r',
     quiz: false,
     keywords: ['skull', 'orbit', 'tear'],
-    description: 'The smallest bone of the face. It lies in the medial wall of the orbit and contributes to the nasolacrimal canal.',
+    description:
+      'The smallest bone of the face. It lies in the medial wall of the orbit and contributes to the nasolacrimal canal.',
     articulations: ['Frontal', 'Ethmoid', 'Maxilla', 'Inferior nasal concha'],
     landmarks: [
       {

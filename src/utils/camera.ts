@@ -94,7 +94,11 @@ export function computeFocus(
     if (marker) {
       const bone = getBone(boneId)
       const offset = bone ? spreadOffset(bone, spread) : [0, 0, 0]
-      target = new THREE.Vector3(marker.position[0] + offset[0], marker.position[1] + offset[1], marker.position[2] + offset[2])
+      target = new THREE.Vector3(
+        marker.position[0] + offset[0],
+        marker.position[1] + offset[1],
+        marker.position[2] + offset[2],
+      )
       distance = THREE.MathUtils.clamp(distance * 0.58, 0.2, 1.4)
     }
   }

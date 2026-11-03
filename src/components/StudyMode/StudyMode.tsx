@@ -9,10 +9,11 @@ import { getBone } from '@/data/bones'
 import { CLASS_LABEL } from '@/data/labels'
 import { getLandmark } from '@/data/landmarks'
 import { navRegions } from '@/data/regions'
+import { normalizeAnswer } from '@/features/study/engine'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import type { AnatomicalRegion, BoneClassification, StudyAnswerMode, StudyKind, StudyScope } from '@/types/anatomy'
 import { cn } from '@/lib/utils'
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 
 function Segmented<T extends string>({
   label,
@@ -45,10 +46,6 @@ function Segmented<T extends string>({
       ))}
     </ToggleGroup>
   )
-}
-
-function normalize(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
 function scopeLabel(
@@ -90,11 +87,10 @@ export function StudyCard() {
   const submitStudyAnswer = useAnatomyStore((state) => state.submitStudyAnswer)
   const modelState = useAnatomyStore((state) => state.modelState)
   const answerId = useId()
-  const [draft, setDraft] = useState('')
-
-  useEffect(() => {
-    setDraft('')
-  }, [answerMode, boneId, landmarkId, studyKind])
+  const questionKey = `${answerMode}:${studyKind}:${boneId}:${landmarkId}`
+  const [draftState, setDraftState] = useState({ key: questionKey, value: '' })
+  const draft = draftState.key === questionKey ? draftState.value : ''
+  const setDraft = (value: string) => setDraftState({ key: questionKey, value })
 
   if (!studyMode) return null
   const bone = getBone(boneId)
@@ -226,8 +222,9 @@ export function StudyCard() {
             {choiceReady ? (
               <div className="mt-4 grid gap-1.5" role="group" aria-label="Answer choices">
                 {choices.map((choice) => {
-                  const isCorrect = revealed && correctName ? normalize(choice) === normalize(correctName) : false
-                  const isPicked = picked ? normalize(choice) === normalize(picked) : false
+                  const isCorrect =
+                    revealed && correctName ? normalizeAnswer(choice) === normalizeAnswer(correctName) : false
+                  const isPicked = picked ? normalizeAnswer(choice) === normalizeAnswer(picked) : false
                   return (
                     <Button
                       key={choice}
@@ -242,7 +239,9 @@ export function StudyCard() {
                       onClick={() => submitStudyChoice(choice)}
                     >
                       <span>{choice}</span>
-                      {revealed && isCorrect ? <span className="font-mono text-[10px] tracking-wide">Correct</span> : null}
+                      {revealed && isCorrect ? (
+                        <span className="font-mono text-[10px] tracking-wide">Correct</span>
+                      ) : null}
                       {revealed && isPicked && !isCorrect ? (
                         <span className="font-mono text-[10px] tracking-wide text-muted-foreground">Incorrect</span>
                       ) : null}
@@ -256,7 +255,9 @@ export function StudyCard() {
                 {result === 'incorrect' && correctName ? (
                   <p className="text-sm text-foreground">Correct answer: {correctName}</p>
                 ) : null}
-                <p className={cn('text-sm leading-6 text-muted-foreground', result === 'incorrect' && 'mt-2')}>{explanation}</p>
+                <p className={cn('text-sm leading-6 text-muted-foreground', result === 'incorrect' && 'mt-2')}>
+                  {explanation}
+                </p>
               </div>
             ) : null}
             {answerMode === 'type' && !revealed ? (
@@ -352,10 +353,16 @@ export function StudyPanelPrompt() {
     <div className="atlas-in">
       <p className="kicker text-primary!">Study mode</p>
       <h2 className="mt-4 font-specimen text-[2rem] leading-none tracking-tight">
-        {answerMode === 'locate' ? 'Find it on the skeleton' : studyKind === 'bone' ? 'Identify the highlighted bone' : 'Identify the landmark'}
+        {answerMode === 'locate'
+          ? 'Find it on the skeleton'
+          : studyKind === 'bone'
+            ? 'Identify the highlighted bone'
+            : 'Identify the landmark'}
       </h2>
       <div className="mt-3 h-px w-8 bg-specimen/70" />
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{studyKind === 'bone' ? bonePrompt : landmarkPrompt}</p>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        {studyKind === 'bone' ? bonePrompt : landmarkPrompt}
+      </p>
     </div>
   )
 }

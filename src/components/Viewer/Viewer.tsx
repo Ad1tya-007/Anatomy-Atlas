@@ -28,12 +28,14 @@ export function Viewer() {
   return (
     <div
       ref={container}
+      data-model-state={modelState}
       className={`relative min-h-0 min-w-0 flex-1 bg-background [&:fullscreen]:h-screen [&:fullscreen]:w-screen ${
         hoveredBoneId ? '[&_canvas]:cursor-pointer' : ''
       }`}
     >
       <p id="viewer-desc" className="sr-only">
-        Interactive 3D skeleton. Drag to rotate, scroll to zoom, and click a bone. The same structures are listed in the anatomy navigator.
+        Interactive 3D skeleton. Drag to rotate, scroll to zoom, and click a bone. The same structures are listed in the
+        anatomy navigator.
       </p>
       <ModelErrorBoundary resetKey={retryKey}>
         <AnatomyScene />

@@ -37,13 +37,15 @@ export const lowerBones: Bone[] = [
       {
         suffix: 'ilium',
         name: 'Ilium',
-        description: 'The broad superior part of the hip bone. Its wing forms the iliac fossa and its crest is the bony margin of the waist.',
+        description:
+          'The broad superior part of the hip bone. Its wing forms the iliac fossa and its crest is the bony margin of the waist.',
         anchor: [0.62, 0.82, 0.48],
       },
       {
         suffix: 'iliac_crest',
         name: 'Iliac crest',
-        description: 'The thickened superior border of the ilium, palpable along the lower waist. It ends anteriorly at the anterior superior iliac spine.',
+        description:
+          'The thickened superior border of the ilium, palpable along the lower waist. It ends anteriorly at the anterior superior iliac spine.',
         anchor: [0.58, 0.98, 0.5],
       },
       {
@@ -61,7 +63,8 @@ export const lowerBones: Bone[] = [
       {
         suffix: 'ischium',
         name: 'Ischium',
-        description: 'The posteroinferior part of the hip bone. It forms much of the acetabulum and the ischial tuberosity.',
+        description:
+          'The posteroinferior part of the hip bone. It forms much of the acetabulum and the ischial tuberosity.',
         anchor: [0.5, 0.18, 0.22],
       },
       {
@@ -79,25 +82,29 @@ export const lowerBones: Bone[] = [
       {
         suffix: 'symphysis',
         name: 'Pubic symphysis',
-        description: 'The cartilaginous joint between the bodies of the two pubic bones. The marker indicates the symphyseal surface.',
+        description:
+          'The cartilaginous joint between the bodies of the two pubic bones. The marker indicates the symphyseal surface.',
         anchor: [0.02, 0.3, 0.72],
       },
       {
         suffix: 'acetabulum',
         name: 'Acetabulum',
-        description: 'The deep lateral socket for the head of the femur, formed by the ilium, ischium, and pubis together.',
+        description:
+          'The deep lateral socket for the head of the femur, formed by the ilium, ischium, and pubis together.',
         anchor: [0.7, 0.4, 0.48],
       },
       {
         suffix: 'obturator',
         name: 'Obturator foramen',
-        description: 'The large opening bounded by the pubis and ischium. In life it is nearly closed by the obturator membrane.',
+        description:
+          'The large opening bounded by the pubis and ischium. In life it is nearly closed by the obturator membrane.',
         anchor: [0.28, 0.22, 0.55],
       },
       {
         suffix: 'sciatic',
         name: 'Greater sciatic notch',
-        description: 'The deep notch on the posterior border of the ilium. Ligaments convert it into the greater sciatic foramen.',
+        description:
+          'The deep notch on the posterior border of the ilium. Ligaments convert it into the greater sciatic foramen.',
         anchor: [0.35, 0.48, 0.08],
       },
     ],
@@ -116,20 +123,24 @@ export const lowerBones: Bone[] = [
       {
         suffix: 'head',
         name: 'Head',
-        description: 'The smooth sphere that fits the acetabulum. It faces medially, superiorly, and slightly anteriorly.',
+        description:
+          'The smooth sphere that fits the acetabulum. It faces medially, superiorly, and slightly anteriorly.',
         anchor: [0.08, 0.96, 0.58],
       },
       {
         suffix: 'neck',
         name: 'Neck',
-        description: 'The strut between the head and the shaft. It is angled so the knees stay under the body’s center of mass.',
-        significance: 'The neck is a common site of fracture in older adults, especially along the intertrochanteric line.',
+        description:
+          'The strut between the head and the shaft. It is angled so the knees stay under the body’s center of mass.',
+        significance:
+          'The neck is a common site of fracture in older adults, especially along the intertrochanteric line.',
         anchor: [0.28, 0.86, 0.52],
       },
       {
         suffix: 'greater_trochanter',
         name: 'Greater trochanter',
-        description: 'A large lateral projection at the junction of neck and shaft. Gluteus medius and minimus insert here.',
+        description:
+          'A large lateral projection at the junction of neck and shaft. Gluteus medius and minimus insert here.',
         anchor: [0.94, 0.84, 0.42],
       },
       {
@@ -153,7 +164,8 @@ export const lowerBones: Bone[] = [
       {
         suffix: 'lateral_condyle',
         name: 'Lateral condyle',
-        description: 'The lateral distal articular knuckle. It meets the lateral tibial plateau and, anteriorly, the patella.',
+        description:
+          'The lateral distal articular knuckle. It meets the lateral tibial plateau and, anteriorly, the patella.',
         anchor: [0.86, 0.06, 0.5],
       },
       {
@@ -233,7 +245,8 @@ export const lowerBones: Bone[] = [
       {
         suffix: 'medial_malleolus',
         name: 'Medial malleolus',
-        description: 'The distal medial projection that forms the medial knob of the ankle and articulates with the talus.',
+        description:
+          'The distal medial projection that forms the medial knob of the ankle and articulates with the talus.',
         anchor: [0.08, 0.06, 0.45],
       },
     ],
@@ -263,7 +276,8 @@ export const lowerBones: Bone[] = [
       {
         suffix: 'lateral_malleolus',
         name: 'Lateral malleolus',
-        description: 'The distal end, which descends farther than the medial malleolus and forms the lateral knob of the ankle.',
+        description:
+          'The distal end, which descends farther than the medial malleolus and forms the lateral knob of the ankle.',
         anchor: [0.6, 0.04, 0.4],
       },
     ],
@@ -305,13 +319,15 @@ export const lowerBones: Bone[] = [
       {
         suffix: 'tuberosity',
         name: 'Calcaneal tuberosity',
-        description: 'The posterior weight-bearing part of the heel. The calcaneal tendon inserts on its upper surface.',
+        description:
+          'The posterior weight-bearing part of the heel. The calcaneal tendon inserts on its upper surface.',
         anchor: [0.5, 0.35, 0.06],
       },
       {
         suffix: 'sustentaculum',
         name: 'Sustentaculum tali',
-        description: 'A medial shelf that supports the head of the talus. The tendon of flexor hallucis longus grooves its inferior surface.',
+        description:
+          'A medial shelf that supports the head of the talus. The tendon of flexor hallucis longus grooves its inferior surface.',
         anchor: [0.08, 0.62, 0.55],
       },
     ],
@@ -327,7 +343,8 @@ export const lowerBones: Bone[] = [
       {
         suffix: 'tuberosity',
         name: 'Tuberosity',
-        description: 'A medial prominence, palpable about 2.5 cm below and anterior to the medial malleolus. Tibialis posterior inserts here.',
+        description:
+          'A medial prominence, palpable about 2.5 cm below and anterior to the medial malleolus. Tibialis posterior inserts here.',
         anchor: [0.06, 0.45, 0.55],
       },
     ],
@@ -426,7 +443,8 @@ export const lowerBones: Bone[] = [
       {
         suffix: 'first',
         name: 'First metatarsal',
-        description: 'The metatarsal of the great toe. It carries a large share of body weight and has sesamoid bones beneath its head.',
+        description:
+          'The metatarsal of the great toe. It carries a large share of body weight and has sesamoid bones beneath its head.',
         mesh: 'First metatarsal bone.r',
         anchor: [0.45, 0.5, 0.55],
       },

@@ -45,7 +45,13 @@ export const joints: Joint[] = [
       'The elbow joint is a hinge synovial joint between the trochlea and capitulum of the humerus and the proximal ends of the ulna and radius. It flexes and extends the forearm.',
     movements: ['Flexion', 'Extension'],
     bones: ['humerus_left', 'radius_left', 'ulna_left'],
-    landmarks: ['humerus_left_capitulum', 'humerus_left_trochlea', 'radius_left_head', 'ulna_left_trochlear', 'ulna_left_olecranon'],
+    landmarks: [
+      'humerus_left_capitulum',
+      'humerus_left_trochlea',
+      'radius_left_head',
+      'ulna_left_trochlear',
+      'ulna_left_olecranon',
+    ],
   },
   {
     id: 'wrist',

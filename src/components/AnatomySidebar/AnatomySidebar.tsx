@@ -8,7 +8,7 @@ import { CLASS_LABEL, CLASS_OPTIONS } from '@/data/labels'
 import { walks } from '@/data/walks'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import { cn } from '@/lib/utils'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 export function AnatomySidebar({ className }: { className?: string }) {
   const classification = useAnatomyStore((state) => state.classification)
@@ -17,12 +17,15 @@ export function AnatomySidebar({ className }: { className?: string }) {
   const selectedBoneId = useAnatomyStore((state) => state.selectedBoneId)
   const walkId = useAnatomyStore((state) => state.walkId)
   const [tab, setTab] = useState('bones')
+  const focusKey = `${walkId}|${selectedJointId}|${selectedBoneId}`
+  const [lastFocusKey, setLastFocusKey] = useState(focusKey)
 
-  useEffect(() => {
+  if (focusKey !== lastFocusKey) {
+    setLastFocusKey(focusKey)
     if (walkId) setTab('walks')
     else if (selectedJointId) setTab('joints')
     else if (selectedBoneId) setTab('bones')
-  }, [walkId, selectedJointId, selectedBoneId])
+  }
 
   return (
     <aside className={cn('h-full min-h-0 flex-col border-r bg-sidebar text-sidebar-foreground', className)}>
@@ -138,7 +141,9 @@ function JointNav() {
                       aria-pressed={pressed}
                       className={cn(
                         'grid size-7 place-items-center font-mono text-[10px] font-medium',
-                        pressed ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                        pressed
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                       )}
                       onClick={() => selectJoint(joint.id, side)}
                     >

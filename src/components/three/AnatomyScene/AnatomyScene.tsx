@@ -8,15 +8,7 @@ import { ContactShadows } from '@react-three/drei'
 import { useFrame, useThree, type RootState } from '@react-three/fiber'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useEffect, useRef } from 'react'
-import {
-  AmbientLight,
-  Color,
-  DirectionalLight,
-  Fog,
-  HemisphereLight,
-  Quaternion,
-  Vector3,
-} from 'three'
+import { AmbientLight, Color, DirectionalLight, Fog, HemisphereLight, Quaternion, Vector3 } from 'three'
 
 const LOOK_LIGHTS: Record<
   LookName,

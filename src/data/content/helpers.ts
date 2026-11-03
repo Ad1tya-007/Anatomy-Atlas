@@ -1,11 +1,4 @@
-import type {
-  AnatomicalRegion,
-  AnchorFrame,
-  Bone,
-  BoneClassification,
-  Landmark,
-  Side,
-} from '@/types/anatomy'
+import type { AnatomicalRegion, AnchorFrame, Bone, BoneClassification, Landmark, Side } from '@/types/anatomy'
 
 export interface LandmarkInput {
   suffix: string
@@ -69,8 +62,10 @@ export function bone(input: BoneInput): Bone {
   }
 }
 
-type PairedInput = Omit<BoneInput, 'id' | 'name' | 'side' | 'displayName' | 'anchorFrame'> & {
+type PairedInput = Omit<BoneInput, 'id' | 'name' | 'side' | 'displayName' | 'anchorFrame' | 'primaryMesh'> & {
   anchorFrame?: AnchorFrame
+  /** One right-side mesh that is mirrored for the left, or a separate mesh per side. */
+  primaryMesh: string | Record<'left' | 'right', string>
 }
 
 export function paired(stem: string, name: string, input: PairedInput): Bone[] {
@@ -81,6 +76,7 @@ export function paired(stem: string, name: string, input: PairedInput): Bone[] {
       name,
       displayName: `${side === 'left' ? 'Left' : 'Right'} ${name}`,
       side,
+      primaryMesh: typeof input.primaryMesh === 'string' ? input.primaryMesh : input.primaryMesh[side],
       anchorFrame: input.anchorFrame ?? 'side',
       alternateNames: [...(input.alternateNames ?? []), `${side} ${name.toLowerCase()}`],
     }),

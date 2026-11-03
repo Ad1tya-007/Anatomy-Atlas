@@ -106,7 +106,11 @@ function BoneRow({ entry, depth }: { entry: NavEntry; depth: number }) {
       {open && entry.children ? (
         <div className="pb-1">
           {entry.children.map((child) => (
-            <BoneRow key={`${child.label}:${child.landmarkSuffix ?? ''}:${child.bones.join()}`} entry={child} depth={depth + 1} />
+            <BoneRow
+              key={`${child.label}:${child.landmarkSuffix ?? ''}:${child.bones.join()}`}
+              entry={child}
+              depth={depth + 1}
+            />
           ))}
         </div>
       ) : null}

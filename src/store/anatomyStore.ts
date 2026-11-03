@@ -1,15 +1,22 @@
-import { contralateralId, getBone, quizBones } from '@/data/bones'
+import { contralateralId, getBone } from '@/data/bones'
 import { highlightedIds } from '@/utils/anatomy'
 import { getJoint, isPairedJoint, resolveJointBones } from '@/data/joints'
 import { allLandmarks, getLandmark } from '@/data/landmarks'
-import { navRegions } from '@/data/regions'
 import { getWalk, resolvedStops } from '@/data/walks'
+import {
+  answerIsCorrect,
+  buildQuestion,
+  correctLabel,
+  defaultStudyRegion,
+  normalizeAnswer,
+  type StudyConfig,
+} from '@/features/study/engine'
 import { CAMERA_PRESETS, regionFocus } from '@/utils/camera'
 import { cancelArrival } from '@/utils/specimenMotion'
 import type {
   AnatomicalRegion,
-  Bone,
   BoneClassification,
+  CameraPose,
   CameraPresetName,
   CameraRequest,
   LookName,
@@ -22,9 +29,9 @@ import type {
   StudyResult,
   StudyScope,
   Vec3,
+  ViewState,
   WalkStop,
 } from '@/types/anatomy'
-import type { LandmarkRecord } from '@/data/landmarks'
 import { create } from 'zustand'
 
 interface AnatomyState {
@@ -66,6 +73,10 @@ interface AnatomyState {
   spread: number
   hasSelected: boolean
   cameraRequest: CameraRequest
+  /** Where the camera settled last. Written by the camera controller, read by the URL. */
+  cameraPose: CameraPose | null
+  /** A restored link's camera. The next selection focus uses it once instead of framing the bone. */
+  restoreCamera: CameraPose | null
   modelState: ModelState
   retryKey: number
   helpOpen: boolean
@@ -107,6 +118,9 @@ interface AnatomyState {
   requestPreset: (preset: CameraPresetName) => void
   focusCamera: (position: Vec3, target: Vec3) => void
   frameRegion: (regionId: string) => void
+  setCameraPose: (pose: CameraPose) => void
+  takeRestoreCamera: () => CameraPose | null
+  restoreView: (view: ViewState) => void
   setModelState: (state: ModelState) => void
   retryModel: () => void
   setHelpOpen: (open: boolean) => void
@@ -118,139 +132,6 @@ let cameraSeq = 1
 function nextCamera(partial: Omit<CameraRequest, 'id'>): CameraRequest {
   cameraSeq += 1
   return { id: cameraSeq, ...partial }
-}
-
-function normalizeAnswer(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, ' ')
-}
-
-function stripSide(value: string): string {
-  return value.replace(/^(left|right)\s+/, '')
-}
-
-function acceptsBone(bone: Bone, raw: string): boolean {
-  const answer = normalizeAnswer(raw)
-  if (!answer) return false
-  const accepted = new Set<string>()
-  for (const field of [bone.name, bone.displayName, ...bone.alternateNames]) {
-    const norm = normalizeAnswer(field)
-    if (!norm) continue
-    accepted.add(norm)
-    const stripped = stripSide(norm)
-    if (stripped) accepted.add(stripped)
-  }
-  if (accepted.has(answer)) return true
-  const stripped = stripSide(answer)
-  return stripped !== answer && stripped.length > 0 && accepted.has(stripped)
-}
-
-function acceptsLandmark(name: string, raw: string): boolean {
-  const answer = normalizeAnswer(raw)
-  return answer.length > 0 && answer === normalizeAnswer(name)
-}
-
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items]
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1))
-    const swap = copy[i]!
-    copy[i] = copy[j]!
-    copy[j] = swap
-  }
-  return copy
-}
-
-function uniqueLabels(labels: string[], exclude: string): string[] {
-  const skip = normalizeAnswer(exclude)
-  const seen = new Set<string>()
-  const out: string[] = []
-  for (const label of labels) {
-    const key = normalizeAnswer(label)
-    if (!key || key === skip || seen.has(key)) continue
-    seen.add(key)
-    out.push(label)
-  }
-  return out
-}
-
-function fillDistractors(pools: string[][], count: number): string[] {
-  const chosen: string[] = []
-  const used = new Set<string>()
-  for (const pool of pools) {
-    for (const label of shuffle(pool)) {
-      if (chosen.length >= count) return chosen
-      const key = normalizeAnswer(label)
-      if (!key || used.has(key)) continue
-      used.add(key)
-      chosen.push(label)
-    }
-  }
-  return chosen
-}
-
-function pickOne<T>(items: T[], exclude: (item: T) => boolean): T | undefined {
-  if (items.length === 0) return undefined
-  const choices = items.filter((item) => !exclude(item))
-  const source = choices.length > 0 ? choices : items
-  return source[Math.floor(Math.random() * source.length)]
-}
-
-function defaultStudyRegion(active: string | null): AnatomicalRegion {
-  if (active && navRegions.some((region) => region.id === active)) return active as AnatomicalRegion
-  return 'head'
-}
-
-function studyPool(state: Pick<AnatomyState, 'studyScope' | 'studyRegionId' | 'studyClassification' | 'activeRegion'>): {
-  bones: Bone[]
-  fallback: boolean
-} {
-  const all = quizBones()
-  if (state.studyScope === 'region') {
-    const region = state.studyRegionId ?? defaultStudyRegion(state.activeRegion)
-    const filtered = all.filter((bone) => bone.region === region)
-    if (filtered.length < 4) return { bones: all, fallback: true }
-    return { bones: filtered, fallback: false }
-  }
-  if (state.studyScope === 'classification') {
-    const classification = state.studyClassification ?? 'long'
-    const filtered = all.filter((bone) => bone.classification === classification)
-    if (filtered.length < 4) return { bones: all, fallback: true }
-    return { bones: filtered, fallback: false }
-  }
-  return { bones: all, fallback: false }
-}
-
-function choiceLabels(correct: string, pools: string[][]): string[] {
-  const distractors = fillDistractors(pools, 3)
-  if (distractors.length < 1) return []
-  return shuffle([correct, ...distractors])
-}
-
-function boneChoiceLabels(correct: Bone, scoped: Bone[], all: Bone[]): string[] {
-  const name = correct.name
-  const sameClass = uniqueLabels(
-    scoped.filter((bone) => bone.classification === correct.classification).map((bone) => bone.name),
-    name,
-  )
-  const inScope = uniqueLabels(scoped.map((bone) => bone.name), name)
-  const everywhere = uniqueLabels(all.map((bone) => bone.name), name)
-  return choiceLabels(name, [sameClass, inScope, everywhere])
-}
-
-function landmarkChoiceLabels(correct: LandmarkRecord, scoped: LandmarkRecord[], all: LandmarkRecord[]): string[] {
-  const name = correct.landmark.name
-  const sameBone = uniqueLabels(
-    scoped.filter((record) => record.boneId === correct.boneId).map((record) => record.landmark.name),
-    name,
-  )
-  const inScope = uniqueLabels(scoped.map((record) => record.landmark.name), name)
-  const everywhere = uniqueLabels(all.map((record) => record.landmark.name), name)
-  return choiceLabels(name, [sameBone, inScope, everywhere])
-}
-
-function quizLandmarks(bones: Bone[]): LandmarkRecord[] {
-  const ids = new Set(bones.map((bone) => bone.id))
-  return allLandmarks.filter((record) => ids.has(record.boneId))
 }
 
 interface QuestionPatch {
@@ -285,101 +166,35 @@ function clearLocateTimer(): void {
 }
 
 function makeQuestion(
-  state: Pick<
-    AnatomyState,
-    'studyScope' | 'studyRegionId' | 'studyClassification' | 'studyAnswerMode' | 'activeRegion'
-  >,
+  state: StudyConfig,
   kind: StudyKind,
   excludeBone: string | null,
   excludeLandmark: string | null,
 ): QuestionPatch {
   clearLocateTimer()
-  const pool = studyPool(state)
-  const allBones = quizBones()
+  const question = buildQuestion(state, kind, excludeBone, excludeLandmark)
   const locate = state.studyAnswerMode === 'locate'
-  const base = {
+  return {
     studyKind: kind,
-    studyRevealed: false as const,
+    studyRevealed: false,
+    studyBoneId: question.boneId,
+    studyLandmarkId: question.landmarkId,
+    selectedBoneId: locate ? null : question.boneId,
+    selectedLandmarkId: locate ? null : question.landmarkId,
+    studyChoices: question.choices,
     studyPicked: null,
     studyResult: null,
-    studyScopeFallback: pool.fallback,
-    studyLocateNarrowed: false,
-    studyLocateLandmarkIds: [] as string[],
+    studyScopeFallback: question.fallback,
+    studyLocateNarrowed: question.locateNarrowed,
+    studyLocateLandmarkIds: question.locateLandmarkIds,
     locatePulseBoneId: null,
     selectedJointId: null,
     jointSide: null,
-    compareSides: false as const,
+    compareSides: false,
     walkId: null,
     walkIndex: 0,
-    isolated: false as const,
+    isolated: false,
   }
-
-  if (kind === 'landmark') {
-    let records = quizLandmarks(pool.bones)
-    let fallback = pool.fallback
-    if (records.length === 0) {
-      records = quizLandmarks(allBones)
-      fallback = true
-    }
-    let narrowed = false
-    const markerEstimate = (items: LandmarkRecord[]) =>
-      items.reduce((count, record) => count + (record.landmark.bothSides ? 2 : 1), 0)
-    if (locate && markerEstimate(records) > 48) {
-      const region = state.studyRegionId ?? defaultStudyRegion(state.activeRegion)
-      const regional = records.filter((record) => getBone(record.boneId)?.region === region)
-      if (regional.length > 0) {
-        records = regional
-        narrowed = true
-      }
-    }
-    const picked = pickOne(records, (record) => record.landmark.id === excludeLandmark)
-    const boneId = picked?.boneId ?? 'femur_left'
-    const landmarkId = picked?.landmark.id ?? 'femur_left_greater_trochanter'
-    const correct = picked ?? getLandmark(landmarkId)
-    const choices =
-      state.studyAnswerMode === 'choice' && correct
-        ? landmarkChoiceLabels(correct, records, quizLandmarks(allBones))
-        : []
-    return {
-      ...base,
-      studyScopeFallback: fallback,
-      studyLocateNarrowed: narrowed,
-      studyLocateLandmarkIds: locate ? records.map((record) => record.landmark.id) : [],
-      studyBoneId: boneId,
-      studyLandmarkId: landmarkId,
-      selectedBoneId: locate ? null : boneId,
-      selectedLandmarkId: locate ? null : landmarkId,
-      studyChoices: choices,
-    }
-  }
-
-  const picked = pickOne(pool.bones, (bone) => bone.id === excludeBone)
-  const boneId = picked?.id ?? allBones[0]?.id ?? 'femur_left'
-  const bone = picked ?? getBone(boneId)
-  const choices =
-    state.studyAnswerMode === 'choice' && bone ? boneChoiceLabels(bone, pool.bones, allBones) : []
-  return {
-    ...base,
-    studyBoneId: boneId,
-    studyLandmarkId: null,
-    selectedBoneId: locate ? null : boneId,
-    selectedLandmarkId: null,
-    studyChoices: choices,
-  }
-}
-
-function correctLabel(state: Pick<AnatomyState, 'studyKind' | 'studyBoneId' | 'studyLandmarkId'>): string | null {
-  if (state.studyKind === 'landmark') return getLandmark(state.studyLandmarkId)?.landmark.name ?? null
-  return getBone(state.studyBoneId)?.name ?? null
-}
-
-function answerIsCorrect(state: AnatomyState, raw: string): boolean {
-  if (state.studyKind === 'landmark') {
-    const name = getLandmark(state.studyLandmarkId)?.landmark.name
-    return name ? acceptsLandmark(name, raw) : false
-  }
-  const bone = getBone(state.studyBoneId)
-  return bone ? acceptsBone(bone, raw) : false
 }
 
 function stopPatch(stop: WalkStop): Partial<AnatomyState> | null {
@@ -470,6 +285,8 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
   spread: 0,
   hasSelected: false,
   cameraRequest: { id: 0, kind: 'preset', preset: 'default', ...CAMERA_PRESETS.default },
+  cameraPose: null,
+  restoreCamera: null,
   modelState: 'loading',
   retryKey: 0,
   helpOpen: false,
@@ -482,8 +299,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
     const landmarkId = options && 'landmarkId' in options ? (options.landmarkId ?? null) : null
     const state = get()
     const partner = state.selectedBoneId ? contralateralId(state.selectedBoneId) : null
-    const keepCompare =
-      state.compareSides && !state.selectedJointId && (id === state.selectedBoneId || id === partner)
+    const keepCompare = state.compareSides && !state.selectedJointId && (id === state.selectedBoneId || id === partner)
     const mobile = !fromStudy ? openInfoOnMobile() : undefined
     if (!fromStudy) clearLocateTimer()
     set({
@@ -660,7 +476,9 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
   enterStudy: (kind = 'bone') => {
     const state = get()
     const studyRegionId =
-      state.studyScope === 'region' ? (state.studyRegionId ?? defaultStudyRegion(state.activeRegion)) : state.studyRegionId
+      state.studyScope === 'region'
+        ? (state.studyRegionId ?? defaultStudyRegion(state.activeRegion))
+        : state.studyRegionId
     const studyClassification = state.studyClassification ?? 'long'
     const question = makeQuestion({ ...state, studyRegionId, studyClassification }, kind, null, null)
     set({
@@ -709,7 +527,8 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
   setStudyScope: (scope) => {
     const state = get()
     if (state.studyScope === scope) return
-    const studyRegionId = scope === 'region' ? (state.studyRegionId ?? defaultStudyRegion(state.activeRegion)) : state.studyRegionId
+    const studyRegionId =
+      scope === 'region' ? (state.studyRegionId ?? defaultStudyRegion(state.activeRegion)) : state.studyRegionId
     const next = { ...state, studyScope: scope, studyRegionId }
     const question = makeQuestion(next, state.studyKind, null, null)
     set({
@@ -770,7 +589,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
     const state = get()
     if (!state.studyMode || state.studyRevealed) return
     if (state.studyAnswerMode !== 'choice' || state.studyChoices.length < 2) return
-    const correct = correctLabel(state)
+    const correct = correctLabel(state.studyKind, state.studyBoneId, state.studyLandmarkId)
     if (!correct) return
     const ok = normalizeAnswer(label) === normalizeAnswer(correct)
     set({
@@ -786,7 +605,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
     const state = get()
     if (!state.studyMode || state.studyRevealed || state.studyAnswerMode !== 'type') return
     if (normalizeAnswer(raw).length === 0) return
-    const ok = answerIsCorrect(state, raw)
+    const ok = answerIsCorrect(state.studyKind, state.studyBoneId, state.studyLandmarkId, raw)
     set({
       studyRevealed: true,
       studyPicked: raw,
@@ -892,6 +711,36 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
     set({ activeRegion: regionId })
     if (!pose) return
     set({ cameraRequest: nextCamera({ kind: 'focus', position: pose.position, target: pose.target }) })
+  },
+
+  setCameraPose: (cameraPose) => set({ cameraPose }),
+
+  takeRestoreCamera: () => {
+    const pose = get().restoreCamera
+    if (pose) set({ restoreCamera: null })
+    return pose
+  },
+
+  restoreView: (view) => {
+    const store = get()
+    if (view.walkId) {
+      store.startWalk(view.walkId)
+      for (let step = 0; step < (view.walkIndex ?? 0); step += 1) store.stepWalk(1)
+    } else if (view.jointId) {
+      store.selectJoint(view.jointId, view.jointSide)
+    } else if (view.boneId) {
+      store.selectBone(view.boneId, { landmarkId: view.landmarkId ?? null })
+    }
+    if (view.look) store.setLook(view.look)
+    if (view.spread) {
+      store.setSpread(view.spread)
+    } else if (view.sectionAxis) {
+      store.setSectionAxis(view.sectionAxis)
+      if (view.sectionAmount !== undefined) store.setSectionAmount(view.sectionAmount)
+    }
+    if (!view.camera) return
+    if (get().selectedBoneId) set({ restoreCamera: view.camera })
+    else store.focusCamera(view.camera.position, view.camera.target)
   },
 
   setModelState: (modelState) => set({ modelState }),

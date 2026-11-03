@@ -52,9 +52,10 @@ export function searchAnatomy(rawQuery: string): SearchResult[] {
   }
 
   for (const bone of bones) {
-    const fields = [bone.name, bone.displayName, ...bone.alternateNames, ...bone.keywords, REGION_LABEL[bone.region]]
+    const fields = [bone.name, bone.displayName, ...bone.alternateNames, ...bone.keywords]
     let best = 0
     for (const field of fields) best = Math.max(best, scoreText(query, field))
+    if (best === 0 && scoreText(query, REGION_LABEL[bone.region]) > 0) best = 48
     if (best === 0 && norm(CLASS_LABEL[bone.classification]).includes(query)) best = 40
     if (best > 0) {
       results.push({
@@ -99,7 +100,10 @@ export function searchAnatomy(rawQuery: string): SearchResult[] {
   }
 
   for (const record of allLandmarks) {
-    const score = Math.max(scoreText(query, record.landmark.name), scoreText(query, record.landmark.id.replaceAll('_', ' ')))
+    const score = Math.max(
+      scoreText(query, record.landmark.name),
+      scoreText(query, record.landmark.id.replaceAll('_', ' ')),
+    )
     if (score === 0) continue
     results.push({
       id: `landmark:${record.landmark.id}`,
@@ -118,14 +122,16 @@ export function searchAnatomy(rawQuery: string): SearchResult[] {
 
 function rankResults(results: SearchResult[]): SearchResult[] {
   const byScore = (a: SearchResult, b: SearchResult) => b.score - a.score || a.title.localeCompare(b.title)
-  const exact = results.filter((result) => result.score === 100 && result.kind !== 'walk').sort(byScore)
-  const exactWalks = results.filter((result) => result.score === 100 && result.kind === 'walk').sort(byScore)
+  const exact = results.filter((result) => result.score === 100 && result.kind !== 'walk').toSorted(byScore)
+  const exactWalks = results.filter((result) => result.score === 100 && result.kind === 'walk').toSorted(byScore)
   const featured = results
     .filter((result) => result.score >= 82 && result.score < 100 && (result.kind === 'joint' || result.kind === 'walk'))
-    .sort(byScore)
+    .toSorted(byScore)
   const rest = results
-    .filter((result) => result.score < 100 && !(result.score >= 82 && (result.kind === 'joint' || result.kind === 'walk')))
-    .sort((a, b) => b.score - a.score || kindRank(a.kind) - kindRank(b.kind) || a.title.localeCompare(b.title))
+    .filter(
+      (result) => result.score < 100 && !(result.score >= 82 && (result.kind === 'joint' || result.kind === 'walk')),
+    )
+    .toSorted((a, b) => b.score - a.score || kindRank(a.kind) - kindRank(b.kind) || a.title.localeCompare(b.title))
   return [...exact, ...exactWalks, ...featured, ...rest]
 }
 

@@ -17,8 +17,7 @@ export function useKeyboardShortcuts(): void {
           store.setHelpOpen(false)
           return
         }
-        const drawerOpen =
-          store.mobilePanel !== 'none' && window.matchMedia('(max-width: 1023px)').matches
+        const drawerOpen = store.mobilePanel !== 'none' && window.matchMedia('(max-width: 1023px)').matches
         if (drawerOpen) {
           event.preventDefault()
           event.stopPropagation()
