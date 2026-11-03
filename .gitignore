@@ -4,6 +4,9 @@ dist
 *.local
 .vite
 .env*
+coverage
+playwright-report
+test-results
 
 
 *.md

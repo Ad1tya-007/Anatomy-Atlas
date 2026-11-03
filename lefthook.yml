@@ -1,0 +1,20 @@
+# Git hooks. `npm install` installs them through lefthook's postinstall step, which skips CI.
+# Skip once with `LEFTHOOK=0 git commit ...`.
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: lint
+      glob: '*.{ts,tsx,js,jsx}'
+      run: npx oxlint --deny-warnings {staged_files}
+    - name: format
+      glob: '*.{ts,tsx,js,jsx,json,css,md,yml,yaml}'
+      run: npx prettier --write --ignore-unknown {staged_files}
+      stage_fixed: true
+
+pre-push:
+  jobs:
+    - name: typecheck
+      run: npm run typecheck
+    - name: unit tests
+      run: npm test
