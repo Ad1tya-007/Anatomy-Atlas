@@ -5,8 +5,10 @@ import { HelpDialog } from '@/components/HelpDialog/HelpDialog'
 import { Viewer } from '@/components/Viewer/Viewer'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import { useUrlSync } from '@/hooks/useUrlSync'
 import { useAnatomyStore } from '@/store/anatomyStore'
 import { Info, ListTree } from 'lucide-react'
 
@@ -45,20 +47,12 @@ function MobileDrawers() {
   return (
     <>
       <Sheet open={panel === 'nav'} onOpenChange={(open) => setMobilePanel(open ? 'nav' : 'none')}>
-        <SheetContent
-          side="bottom"
-          showCloseButton={false}
-          className="top-14 bottom-12 h-auto max-h-none gap-0 p-0"
-        >
+        <SheetContent side="bottom" showCloseButton={false} className="top-14 bottom-12 h-auto max-h-none gap-0 p-0">
           <AnatomySidebar className="flex h-full" />
         </SheetContent>
       </Sheet>
       <Sheet open={panel === 'info'} onOpenChange={(open) => setMobilePanel(open ? 'info' : 'none')}>
-        <SheetContent
-          side="bottom"
-          showCloseButton={false}
-          className="top-14 bottom-12 h-auto max-h-none gap-0 p-0"
-        >
+        <SheetContent side="bottom" showCloseButton={false} className="top-14 bottom-12 h-auto max-h-none gap-0 p-0">
           <AnatomyInfoPanel className="flex h-full" />
         </SheetContent>
       </Sheet>
@@ -68,6 +62,7 @@ function MobileDrawers() {
 
 export default function App() {
   useKeyboardShortcuts()
+  useUrlSync()
   return (
     <TooltipProvider>
       <div className="flex h-dvh flex-col overflow-hidden bg-background font-sans text-foreground">
@@ -86,6 +81,7 @@ export default function App() {
         <MobileBar />
         <MobileDrawers />
         <HelpDialog />
+        <Toaster position="bottom-center" />
       </div>
     </TooltipProvider>
   )

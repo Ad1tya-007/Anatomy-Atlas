@@ -4,8 +4,19 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { getBone } from '@/data/bones'
 import { getJoint } from '@/data/joints'
 import { getLandmark } from '@/data/landmarks'
+import { currentViewUrl } from '@/hooks/useUrlSync'
 import { useAnatomyStore } from '@/store/anatomyStore'
-import { BookOpen, CircleHelp } from 'lucide-react'
+import { BookOpen, CircleHelp, Link2 } from 'lucide-react'
+import { toast } from 'sonner'
+
+async function copyViewLink(): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(currentViewUrl())
+    toast.success('Link copied', { description: 'Anyone with the link opens this exact view.' })
+  } catch {
+    toast.error('Could not copy the link', { description: 'Copy it from the address bar instead.' })
+  }
+}
 
 export function Header() {
   const studyMode = useAnatomyStore((state) => state.studyMode)
@@ -36,7 +47,9 @@ export function Header() {
         </div>
       </div>
       {readout ? (
-        <p className="hidden min-w-0 max-w-[14rem] truncate font-specimen text-[15px] leading-none lg:block">{readout}</p>
+        <p className="hidden min-w-0 max-w-[14rem] truncate font-specimen text-[15px] leading-none lg:block">
+          {readout}
+        </p>
       ) : null}
       <div className="min-w-0 flex-1">
         <div className="mx-auto w-full max-w-xl">
@@ -56,11 +69,33 @@ export function Header() {
               <span className="hidden sm:inline">{studyMode ? 'Exit study' : 'Study'}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{studyMode ? 'Leave the current sitting' : 'Practice naming bones and landmarks'}</TooltipContent>
+          <TooltipContent>
+            {studyMode ? 'Leave the current sitting' : 'Practice naming bones and landmarks'}
+          </TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button type="button" variant="outline" size="icon" aria-label="Open controls guide" onClick={() => setHelpOpen(true)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Copy link to this view"
+              onClick={copyViewLink}
+            >
+              <Link2 />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Copy link to this view</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Open controls guide"
+              onClick={() => setHelpOpen(true)}
+            >
               <CircleHelp />
             </Button>
           </TooltipTrigger>
