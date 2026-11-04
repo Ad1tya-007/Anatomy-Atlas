@@ -25,6 +25,7 @@ import type {
   CameraRequest,
   LookName,
   MobilePanel,
+  SidePanel,
   ModelState,
   SectionAxis,
   SelectBoneOptions,
@@ -97,6 +98,7 @@ interface AnatomyState {
   retryKey: number
   helpOpen: boolean
   mobilePanel: MobilePanel
+  sidePanel: SidePanel
 
   selectBone: (id: string, options?: SelectBoneOptions) => void
   selectLandmark: (id: string) => void
@@ -143,6 +145,7 @@ interface AnatomyState {
   retryModel: () => void
   setHelpOpen: (open: boolean) => void
   setMobilePanel: (panel: MobilePanel) => void
+  setSidePanel: (panel: SidePanel) => void
 }
 
 let cameraSeq = 1
@@ -379,6 +382,7 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
   retryKey: 0,
   helpOpen: false,
   mobilePanel: 'none',
+  sidePanel: 'details',
 
   selectBone: (id, options) => {
     const bone = getBone(id)
@@ -872,6 +876,8 @@ export const useAnatomyStore = create<AnatomyState>((set, get) => ({
   setHelpOpen: (helpOpen) => set({ helpOpen }),
 
   setMobilePanel: (mobilePanel) => set({ mobilePanel }),
+
+  setSidePanel: (sidePanel) => set({ sidePanel }),
 }))
 
 export function useHasSelection(): boolean {

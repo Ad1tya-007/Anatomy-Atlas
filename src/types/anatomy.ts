@@ -94,7 +94,10 @@ export interface StudyQuestion {
 
 export type ModelState = 'loading' | 'ready' | 'error'
 
-export type MobilePanel = 'none' | 'nav' | 'info'
+export type MobilePanel = 'none' | 'nav' | 'info' | 'tutor'
+
+/** The desktop panel on the right: structure details or the tutor chat. */
+export type SidePanel = 'details' | 'tutor'
 
 export interface Joint {
   id: string
