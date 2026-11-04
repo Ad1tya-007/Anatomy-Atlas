@@ -1,7 +1,7 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
-import { loadEnv } from 'vite'
+import { loadEnv, type Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
 
 /**
@@ -19,8 +19,31 @@ function supabaseEnv(mode: string): Record<string, string> {
   }
 }
 
+/**
+ * Serves /api/tutor from the dev server. The handler is loaded through Vite, so edits apply without a restart.
+ * The AI Gateway client reads its credentials from process.env, so those two values are copied from .env.local.
+ */
+function tutorApi(): Plugin {
+  return {
+    name: 'atlas:tutor-api',
+    apply: 'serve',
+    configureServer(server) {
+      const env = loadEnv(server.config.mode, process.cwd(), '')
+      for (const key of ['AI_GATEWAY_API_KEY', 'VERCEL_OIDC_TOKEN']) {
+        if (env[key]) process.env[key] ??= env[key]
+      }
+      server.middlewares.use('/api/tutor', (req, res, next) => {
+        server
+          .ssrLoadModule('/src/server/tutor/nodeHandler.ts')
+          .then((module) => module.handleNodeTutorRequest(req, res, env))
+          .catch(next)
+      })
+    },
+  }
+}
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), ...(mode === 'test' ? [] : [tutorApi()])],
   define: supabaseEnv(mode),
   resolve: {
     alias: {
@@ -37,8 +60,14 @@ export default defineConfig(({ mode }) => ({
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'text', 'html', 'lcov', 'json-summary'],
-      include: ['src/features/**', 'src/utils/**', 'src/data/**', 'src/store/**'],
-      exclude: ['**/*.test.{ts,tsx}'],
+      include: ['src/features/**', 'src/utils/**', 'src/data/**', 'src/store/**', 'src/server/**'],
+      // Entry points and the demo model are exercised by the Vercel smoke test and the dev server, not unit tests.
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        'src/server/vercel/**',
+        'src/server/tutor/nodeHandler.ts',
+        'src/server/tutor/demoModel.ts',
+      ],
       thresholds: {
         lines: 70,
         functions: 70,

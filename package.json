@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run typecheck && vite build",
+    "build:vercel": "npm run typecheck && tsx scripts/build-vercel.ts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "lint": "oxlint --deny-warnings",
@@ -24,7 +25,9 @@
     "db:reset": "supabase db reset",
     "db:test": "supabase db lint --level warning --fail-on warning && supabase test db",
     "db:types": "supabase gen types --lang typescript --schema public > src/features/sync/database.types.ts && prettier --write src/features/sync/database.types.ts",
-    "test:integration": "tsx scripts/test-integration.ts"
+    "test:integration": "tsx scripts/test-integration.ts",
+    "eval": "tsx scripts/eval-tutor.ts",
+    "tutor:embeddings": "tsx scripts/tutor-embeddings.ts"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.166",
