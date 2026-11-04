@@ -1,0 +1,59 @@
+name: Tutor evals
+
+on:
+  schedule:
+    # Mondays 06:00 UTC: catches regressions from model or gateway changes.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      modes:
+        description: Retrieval modes to compare (space separated)
+        default: bm25 hybrid
+      model:
+        description: Tutor model (blank for the default)
+        default: ''
+
+concurrency:
+  group: evals
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    name: Run tutor evals
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+    steps:
+      - name: Skip without a gateway key
+        if: env.AI_GATEWAY_API_KEY == ''
+        run: echo "::notice::Set the AI_GATEWAY_API_KEY secret to run tutor evals."
+      - uses: actions/checkout@v7
+        if: env.AI_GATEWAY_API_KEY != ''
+      - uses: actions/setup-node@v7
+        if: env.AI_GATEWAY_API_KEY != ''
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        if: env.AI_GATEWAY_API_KEY != ''
+      - name: Evals
+        if: env.AI_GATEWAY_API_KEY != ''
+        env:
+          MODES: ${{ inputs.modes || 'bm25 hybrid' }}
+          MODEL: ${{ inputs.model }}
+        run: |
+          status=0
+          for mode in $MODES; do
+            npm run eval -- --mode "$mode" ${MODEL:+--model "$MODEL"} --gate || status=1
+          done
+          exit $status
+      - uses: actions/upload-artifact@v6
+        if: always() && env.AI_GATEWAY_API_KEY != ''
+        with:
+          name: tutor-evals
+          path: evals/results/
+          retention-days: 30
