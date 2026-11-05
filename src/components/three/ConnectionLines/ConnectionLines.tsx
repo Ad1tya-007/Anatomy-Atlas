@@ -1,7 +1,7 @@
 import type { SkeletonIndex } from '@/components/three/skeletonIndex'
 import { getJoint, isPairedJoint, jointsForBone, resolveJointBones } from '@/data/joints'
 import { useAnatomyStore } from '@/store/anatomyStore'
-import { boundsForBone } from '@/utils/camera'
+import { boundsForBone } from '@/components/three/focus'
 import { sectionRemovesPoint } from '@/utils/section'
 import { spreadNow } from '@/utils/specimenMotion'
 import { spreadOffsetForId } from '@/utils/spread'

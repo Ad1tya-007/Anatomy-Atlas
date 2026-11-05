@@ -1,4 +1,3 @@
-import { AnatomyScene } from '@/components/three/AnatomyScene/AnatomyScene'
 import { MasteryLegend } from '@/components/MasteryLegend/MasteryLegend'
 import { ModelErrorBoundary } from '@/components/ModelErrorBoundary'
 import { StudyCard } from '@/components/StudyMode/StudyMode'
@@ -10,7 +9,11 @@ import { Spinner } from '@/components/ui/spinner'
 import { getBone } from '@/data/bones'
 import { useMasteryByBone } from '@/features/srs/useMastery'
 import { useAnatomyStore } from '@/store/anatomyStore'
-import { useRef } from 'react'
+import { lazy, Suspense, useRef } from 'react'
+
+// three.js, R3F, and drei are most of the JavaScript; the request starts with the app bundle instead of at first render.
+const sceneModule = import('@/components/three/AnatomyScene/AnatomyScene')
+const AnatomyScene = lazy(() => sceneModule.then((module) => ({ default: module.AnatomyScene })))
 
 export function Viewer() {
   const container = useRef<HTMLDivElement>(null)
@@ -43,7 +46,9 @@ export function Viewer() {
         anatomy navigator.
       </p>
       <ModelErrorBoundary resetKey={retryKey}>
-        <AnatomyScene />
+        <Suspense fallback={null}>
+          <AnatomyScene />
+        </Suspense>
       </ModelErrorBoundary>
       <div className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(circle_at_center,transparent_42%,rgb(0_0_0/0.42)_100%)]" />
       {modelState === 'loading' ? (

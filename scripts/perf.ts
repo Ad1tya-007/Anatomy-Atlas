@@ -5,11 +5,11 @@
  * Writes perf/<label>.json. WebGL runs on SwiftShader, so absolute frame times are not GPU numbers; compare runs
  * against each other, not against real devices.
  */
-import { chromium } from '@playwright/test'
+import { chromium, type Page } from '@playwright/test'
 import { spawn, type ChildProcess } from 'node:child_process'
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { mkdirSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { brotliCompressSync, gzipSync } from 'node:zlib'
+import { bundleSizes, modelSizes } from './bundleSizes'
 
 const PORT = 4179
 const URL_BASE = `http://localhost:${PORT}/`
@@ -30,68 +30,12 @@ const GL_ARGS = GPU
   : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
 const presets = flag('--lighthouse', 'desktop,mobile').split(',') as Array<'desktop' | 'mobile'>
 
-interface FileSize {
-  file: string
-  raw: number
-  gzip: number
-  brotli: number
-}
-
-function sizeOf(path: string): FileSize {
-  const data = readFileSync(path)
-  return {
-    file: path.slice(DIST.length + 1),
-    raw: data.length,
-    gzip: gzipSync(data, { level: 9 }).length,
-    brotli: brotliCompressSync(data).length,
-  }
-}
-
-function sum(files: FileSize[]): Omit<FileSize, 'file'> {
-  return files.reduce(
-    (total, file) => ({
-      raw: total.raw + file.raw,
-      gzip: total.gzip + file.gzip,
-      brotli: total.brotli + file.brotli,
-    }),
-    { raw: 0, gzip: 0, brotli: 0 },
-  )
-}
-
-/** First-load JS is the entry script plus everything index.html preloads. The rest loads on demand. */
-function bundleSizes() {
-  const html = readFileSync(join(DIST, 'index.html'), 'utf8')
-  const initial = new Set([...html.matchAll(/(?:src|href)="\/(assets\/[^"]+\.(?:js|css))"/g)].map((match) => match[1]))
-  const assets = readdirSync(join(DIST, 'assets')).filter((file) => /\.(js|css)$/.test(file))
-  const files = assets.map((file) => sizeOf(join(DIST, 'assets', file)))
-  const js = files.filter((file) => file.file.endsWith('.js'))
-  const css = files.filter((file) => file.file.endsWith('.css'))
-  const firstLoadJs = js.filter((file) => initial.has(file.file))
-  return {
-    firstLoadJs: sum(firstLoadJs),
-    lazyJs: sum(js.filter((file) => !initial.has(file.file))),
-    css: sum(css),
-    chunks: js.length,
-    files: files.toSorted((a, b) => b.raw - a.raw),
-  }
-}
-
-function modelSizes() {
-  const draco = readdirSync(join(DIST, 'draco')).map((file) => sizeOf(join(DIST, 'draco', file)))
-  const models = readdirSync(join(DIST, 'models')).filter((file) => file.endsWith('.glb'))
-  return {
-    glb: models.map((file) => sizeOf(join(DIST, 'models', file))),
-    decoders: draco,
-    decoderTotal: sum(draco),
-  }
-}
-
 /**
  * Counts draw calls and triangles per animation frame by wrapping the WebGL draw functions. It is a string because
  * tsx adds helpers to compiled functions that do not exist inside the page.
  */
 const INSTRUMENT_WEBGL = `(() => {
-  const stats = { frames: 0, drawnFrames: 0, calls: 0, triangles: 0, lastCalls: 0, lastTriangles: 0 }
+  const stats = { frames: 0, drawnFrames: 0, calls: 0, triangles: 0, lastCalls: 0, lastTriangles: 0, drawn: [] }
   window.atlasPerf = stats
   for (const proto of [WebGLRenderingContext.prototype, WebGL2RenderingContext.prototype]) {
     for (const name of ['drawElements', 'drawArrays', 'drawElementsInstanced', 'drawArraysInstanced']) {
@@ -116,6 +60,8 @@ const INSTRUMENT_WEBGL = `(() => {
             stats.drawnFrames += 1
             stats.lastCalls = stats.calls
             stats.lastTriangles = stats.triangles
+            stats.drawn.push({ calls: stats.calls, triangles: stats.triangles, time: frameStamp })
+            if (stats.drawn.length > 2000) stats.drawn.shift()
           }
           stats.calls = 0
           stats.triangles = 0
@@ -181,6 +127,7 @@ async function runtimeMetrics() {
   const framesAfter = await page.evaluate(
     () => (window as unknown as { atlasPerf: { drawnFrames: number } }).atlasPerf.drawnFrames,
   )
+  const orbit = await measureOrbit(page)
   const vitals = await page.evaluate(
     () =>
       new Promise<{ lcp: number | null; cls: number }>((resolve) => {
@@ -213,7 +160,55 @@ async function runtimeMetrics() {
       mainThreadBusyMs: Math.round(((after.TaskDuration ?? 0) - (before.TaskDuration ?? 0)) * 1000),
       scriptMs: Math.round(((after.ScriptDuration ?? 0) - (before.ScriptDuration ?? 0)) * 1000),
     },
+    orbit,
     jsHeapMb: Number(((after.JSHeapUsedSize ?? 0) / 1024 / 1024).toFixed(1)),
+  }
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) return 0
+  const sorted = values.toSorted((left, right) => left - right)
+  return sorted[Math.floor(sorted.length / 2)]!
+}
+
+/** Drags the camera for about a second and reports the cost of each frame drawn while it moves. */
+async function measureOrbit(page: Page) {
+  const canvas = page.locator('canvas').first()
+  const box = await canvas.boundingBox()
+  if (!box) throw new Error('No canvas to orbit')
+  const drawnCount = () =>
+    page.evaluate(() => (window as unknown as { atlasPerf: { drawn: unknown[] } }).atlasPerf.drawn.length)
+  const start = await drawnCount()
+  const x = box.x + box.width * 0.62
+  const y = box.y + box.height * 0.5
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  for (let step = 1; step <= 60; step++) {
+    await page.mouse.move(x + step * 5, y + Math.sin(step / 9) * 20)
+    await page.waitForTimeout(16)
+  }
+  await page.mouse.up()
+  await page.waitForTimeout(1500)
+  const frames = (await page.evaluate(
+    (from) =>
+      (
+        window as unknown as { atlasPerf: { drawn: Array<{ calls: number; triangles: number; time: number }> } }
+      ).atlasPerf.drawn.slice(from),
+    start,
+  )) as Array<{ calls: number; triangles: number; time: number }>
+  const intervals = frames.slice(1).map((frame, index) => frame.time - frames[index]!.time)
+  return {
+    framesDrawn: frames.length,
+    medianDrawCalls: median(frames.map((frame) => frame.calls)),
+    medianTriangles: Math.round(median(frames.map((frame) => frame.triangles))),
+    medianFrameMs: Number(median(intervals.filter((interval) => interval < 100)).toFixed(1)),
+    p95FrameMs: Number(
+      (
+        intervals.filter((interval) => interval < 100).toSorted((left, right) => left - right)[
+          Math.floor(intervals.length * 0.95)
+        ] ?? 0
+      ).toFixed(1),
+    ),
   }
 }
 
@@ -264,8 +259,8 @@ async function main() {
     label,
     renderer: GPU ? 'gpu' : 'swiftshader',
     measuredAt: new Date().toISOString(),
-    bundle: bundleSizes(),
-    model: modelSizes(),
+    bundle: bundleSizes(DIST),
+    model: modelSizes(DIST),
   }
   const save = () => writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`)
   save()
@@ -283,7 +278,10 @@ async function main() {
     preview.kill()
   }
   const bundle = report.bundle as ReturnType<typeof bundleSizes>
-  console.log(`First-load JS: ${kb(bundle.firstLoadJs.raw)} (${kb(bundle.firstLoadJs.gzip)} gzip), wrote ${out}`)
+  console.log(
+    `First-load JS: ${kb(bundle.firstLoadJs.raw)} (${kb(bundle.firstLoadJs.gzip)} gzip), render-blocking ` +
+      `${kb(bundle.renderBlockingJs.raw)} (${kb(bundle.renderBlockingJs.gzip)} gzip), wrote ${out}`,
+  )
 }
 
 await main()

@@ -3,7 +3,7 @@ import { ConnectionLines } from '@/components/three/ConnectionLines/ConnectionLi
 import { BoneLabel, LandmarkLayer } from '@/components/three/LandmarkMarker/LandmarkMarker'
 import { buildSkeleton, MODEL_OFFSET_Y, type SkeletonIndex } from '@/components/three/skeletonIndex'
 import { useAnatomyStore } from '@/store/anatomyStore'
-import { computeFocus, computeGroupFocus } from '@/utils/camera'
+import { computeFocus, computeGroupFocus } from '@/components/three/focus'
 import { writeSectionPlane } from '@/utils/section'
 import { beginArrival } from '@/utils/specimenMotion'
 import { selectionHighlight, visualFor } from '@/utils/anatomy'

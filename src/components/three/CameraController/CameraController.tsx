@@ -21,6 +21,10 @@ export function CameraController() {
   const lastPosition = useRef(new Vector3())
   const lastTarget = useRef(new Vector3())
   const movedAt = useRef<number | null>(null)
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const invalidate = useThree((state) => state.invalidate)
+
+  useEffect(() => () => clearTimeout(settleTimer.current), [])
 
   useLayoutEffect(() => {
     camera.position.copy(HOME_POSITION)
@@ -38,8 +42,9 @@ export function CameraController() {
       goalPosition.current.set(...request.position)
       goalTarget.current.set(...request.target)
       animating.current = true
+      invalidate()
     }
-  }, [request])
+  }, [invalidate, request])
 
   useFrame((state, delta) => {
     const orbit = controls.current
@@ -58,6 +63,8 @@ export function CameraController() {
       orbit.target.copy(goalTarget.current)
       animating.current = false
       orbit.update()
+    } else {
+      state.invalidate()
     }
   }, 1)
 
@@ -73,6 +80,8 @@ export function CameraController() {
       lastPosition.current.copy(view.position)
       lastTarget.current.copy(orbit.target)
       movedAt.current = now
+      clearTimeout(settleTimer.current)
+      settleTimer.current = setTimeout(() => state.invalidate(), SETTLE_MS + 20)
       return
     }
     if (movedAt.current === null || now - movedAt.current < SETTLE_MS) return

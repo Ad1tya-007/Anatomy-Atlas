@@ -1,6 +1,7 @@
 import type { SkeletonIndex } from '@/components/three/skeletonIndex'
 import { getBone } from '@/data/bones'
-import { boundsForBone, CAMERA_PRESETS, computeFocus, computeGroupFocus, regionFocus } from '@/utils/camera'
+import { boundsForBone, computeFocus, computeGroupFocus } from '@/components/three/focus'
+import { CAMERA_PRESETS, regionFocus } from '@/utils/camera'
 import { sectionRemovesPoint, writeSectionPlane } from '@/utils/section'
 import { spreadOffset, spreadOffsetForId } from '@/utils/spread'
 import { Box3, Plane, Vector3 } from 'three'

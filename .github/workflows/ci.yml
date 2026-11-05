@@ -57,6 +57,52 @@ jobs:
             done
           } >> "$GITHUB_STEP_SUMMARY"
 
+  performance:
+    name: Size budgets and Lighthouse CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx vite build
+      - name: Size budgets
+        run: npm run perf:budgets
+      - name: Lighthouse, desktop
+        run: npx lhci autorun
+      - name: Lighthouse, mobile
+        if: success() || failure()
+        env:
+          ATLAS_LH_PRESET: mobile
+        run: npx lhci collect && npx lhci upload && npx lhci assert
+      - name: Lighthouse summary
+        if: always() && hashFiles('.lighthouseci/*/*.report.json') != ''
+        run: |
+          node -e '
+            const fs = require("fs")
+            const files = ["desktop", "mobile"].flatMap((dir) =>
+              fs.existsSync(".lighthouseci/" + dir)
+                ? fs.readdirSync(".lighthouseci/" + dir).filter((f) => f.endsWith(".report.json")).map((f) => `.lighthouseci/${dir}/${f}`)
+                : [],
+            )
+            const rows = files.map((file) => {
+              const lhr = JSON.parse(fs.readFileSync(file, "utf8"))
+              const a = (id) => lhr.audits[id].numericValue
+              const preset = lhr.configSettings.formFactor
+              return `| ${preset} | ${Math.round(lhr.categories.performance.score * 100)} | ${Math.round(a("first-contentful-paint"))} | ${Math.round(a("largest-contentful-paint"))} | ${Math.round(a("total-blocking-time"))} | ${a("cumulative-layout-shift").toFixed(3)} |`
+            })
+            console.log(["### Lighthouse runs", "| Form factor | Performance | FCP ms | LCP ms | TBT ms | CLS |", "| --- | --- | --- | --- | --- | --- |", ...rows].join("\n"))
+          ' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: lighthouse
+          path: .lighthouseci
+          retention-days: 7
+
   database:
     name: Database, RLS, and sync integration tests
     runs-on: ubuntu-latest

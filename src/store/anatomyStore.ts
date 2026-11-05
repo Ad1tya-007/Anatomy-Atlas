@@ -40,7 +40,7 @@ import type {
 } from '@/types/anatomy'
 import { create } from 'zustand'
 
-interface AnatomyState {
+export interface AnatomyState {
   selectedBoneId: string | null
   selectedLandmarkId: string | null
   selectedJointId: string | null

@@ -98,7 +98,8 @@ export function HelpDialog() {
             <p className="mt-2 text-muted-foreground">
               Skeleton geometry is the Open3DModel by the Open3D project, George J.R. Maat, LUMC, Eungyeol Lee, LUMC,
               and contributors, licensed CC BY-SA. It is based on BodyParts3D and Z-Anatomy. The right-sided bones in
-              the source file are mirrored here to show the left side.
+              the source file are mirrored here to show the left side. Thirty-eight 1024×1024 normal maps were downsized
+              to 512×512; the geometry is unchanged.
             </p>
             <a
               className="mt-2 inline-block text-primary underline-offset-4 hover:underline"

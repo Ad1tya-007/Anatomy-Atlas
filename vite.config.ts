@@ -42,8 +42,35 @@ function tutorApi(): Plugin {
   }
 }
 
+/**
+ * The viewer imports the 3D scene dynamically so the shell renders first, but the scene is always needed: preload it
+ * from the HTML so it downloads alongside the app bundle instead of after it runs.
+ */
+function preloadScene(): Plugin {
+  return {
+    name: 'atlas-preload-scene',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_html, context) {
+        const chunk = Object.values(context.bundle ?? {}).find(
+          (output) => output.type === 'chunk' && output.isDynamicEntry && output.name === 'AnatomyScene',
+        )
+        if (chunk?.type !== 'chunk') return []
+        const loaded = new Set([context.chunk?.fileName, ...(context.chunk?.imports ?? [])])
+        const files = [chunk.fileName, ...chunk.imports.filter((file) => !loaded.has(file))]
+        return files.map((file) => ({
+          tag: 'link',
+          attrs: { rel: 'modulepreload', crossorigin: true, href: `/${file}`, 'data-scene': true },
+          injectTo: 'head' as const,
+        }))
+      },
+    },
+  }
+}
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), ...(mode === 'test' ? [] : [tutorApi()])],
+  plugins: [react(), tailwindcss(), preloadScene(), ...(mode === 'test' ? [] : [tutorApi()])],
   define: supabaseEnv(mode),
   resolve: {
     alias: {

@@ -5,6 +5,7 @@ License: Creative Commons Attribution-ShareAlike (CC BY-SA).
 Source: https://anatomytool.org/open3dmodel
 
 The Open3DModel is based on the predecessor projects BodyParts3D and Z-Anatomy.
-This application does not modify the glTF file. The viewer mirrors right-sided bones to show the left side.
+Changes: the 38 normal maps that were 1024x1024 are downsized to 512x512 (scripts/resize-normal-maps.ts); geometry,
+materials, and names are unchanged. The viewer mirrors right-sided bones to show the left side.
 
 The web application code is separate from the model. If you redistribute the model file, keep this credit and the CC BY-SA license.

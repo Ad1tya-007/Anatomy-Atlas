@@ -63,3 +63,8 @@ export function tickLook(now: number, reduced: boolean): void {
 export function lookPaint(): { look: LookName; from: LookName; blend: number } {
   return { look: activeLook, from: fromLook, blend: lookBlend }
 }
+
+/** True while the arrival or a look blend is mid-animation, so the on-demand render loop must keep drawing. */
+export function motionActive(): boolean {
+  return arrivalActive || lookBlend < 1
+}

@@ -4,6 +4,7 @@ dist
 *.local
 .vite
 .env*
+!.env.example
 coverage
 playwright-report
 test-results
@@ -16,6 +17,7 @@ test-results
 
 # Local perf measurements (summaries live in docs/perf.md)
 perf/
+.lighthouseci/
 
 # Tutor eval output (the summary lives in README.md) and the regenerable embedding index
 evals/results/
