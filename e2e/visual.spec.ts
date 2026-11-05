@@ -22,17 +22,22 @@ async function freezeRendering(page: Page): Promise<void> {
   await page.evaluate(
     () =>
       new Promise<void>((resolve) => {
+        const raf = window.requestAnimationFrame.bind(window)
+        let done = false
+        const finish = () => {
+          if (done) return
+          done = true
+          window.requestAnimationFrame = () => 0
+          setTimeout(resolve, 200)
+        }
         let frames = 0
         const tick = () => {
           frames += 1
-          if (frames < 4) {
-            requestAnimationFrame(tick)
-            return
-          }
-          window.requestAnimationFrame = () => 0
-          setTimeout(resolve, 500)
+          if (frames < 4) raf(tick)
+          else finish()
         }
-        requestAnimationFrame(tick)
+        raf(tick)
+        setTimeout(finish, 1500)
       }),
   )
 }

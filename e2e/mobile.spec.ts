@@ -16,3 +16,10 @@ test('navigates and reads details on a phone', async ({ page }) => {
   await expect(page.getByRole('dialog')).toBeHidden()
   await expect(page.getByRole('button', { name: 'Details' })).toHaveAttribute('aria-pressed', 'false')
 })
+
+test('opens the tutor on a phone', async ({ page }) => {
+  await openAtlas(page)
+  await page.getByRole('button', { name: 'Tutor' }).click()
+  const tutor = page.getByRole('region', { name: 'Tutor' })
+  await expect(tutor.getByText(/Educational use only, not medical advice/)).toBeVisible()
+})
