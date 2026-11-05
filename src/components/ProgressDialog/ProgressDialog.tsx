@@ -38,9 +38,9 @@ function percent(value: number | null): string {
 
 function Stat({ label, value, icon }: { label: string; value: string; icon?: ReactNode }) {
   return (
-    <div className="rounded-md border bg-muted/30 px-3 py-2">
+    <div className="rounded-xl border border-white/8 bg-white/3 px-3 py-3">
       <p className="kicker">{label}</p>
-      <p className="mt-1 flex items-center gap-1.5 font-mono text-lg">
+      <p className="mt-2 flex items-center gap-1.5 font-specimen text-[1.65rem] leading-none tracking-tight">
         {icon}
         {value}
       </p>
@@ -50,7 +50,7 @@ function Stat({ label, value, icon }: { label: string; value: string; icon?: Rea
 
 function ChartCard({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
   return (
-    <section className="rounded-md border p-3">
+    <section className="rounded-xl border border-white/8 p-3">
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-sm font-medium">{title}</h3>
         {note ? <p className="text-[11px] text-muted-foreground">{note}</p> : null}
@@ -88,9 +88,10 @@ export function ProgressDialog({ open, onOpenChange }: { open: boolean; onOpenCh
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto p-5 sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="text-base">Your progress</DialogTitle>
+          <p className="kicker">Spaced repetition</p>
+          <DialogTitle className="font-specimen text-2xl leading-none tracking-tight">Your progress</DialogTitle>
           <DialogDescription>
             Spaced-repetition stats from every question you have answered on this device
             {events.length === 0 ? '. Answer a few study questions to fill this in.' : '.'}
@@ -201,7 +202,7 @@ export function ProgressDialog({ open, onOpenChange }: { open: boolean; onOpenCh
             </ChartCard>
           </TabsContent>
           <TabsContent value="mastery" className="mt-3">
-            <section className="rounded-md border p-3">
+            <section className="rounded-xl border border-white/8 p-3">
               <h3 className="text-sm font-medium">Mastery by region</h3>
               <p className="text-[11px] text-muted-foreground">
                 Mean estimated recall of studied bones. The mastery map paints the same numbers.

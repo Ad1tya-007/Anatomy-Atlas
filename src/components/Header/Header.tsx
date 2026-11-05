@@ -7,6 +7,7 @@ import { getJoint } from '@/data/joints'
 import { getLandmark } from '@/data/landmarks'
 import { currentViewUrl } from '@/hooks/useUrlSync'
 import { useAnatomyStore } from '@/store/anatomyStore'
+import { cn } from '@/lib/utils'
 import { BarChart3, BookOpen, CircleHelp, Link2 } from 'lucide-react'
 import { lazy, Suspense, useState } from 'react'
 import { toast } from 'sonner'
@@ -42,19 +43,23 @@ export function Header() {
       null)
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-card px-3 sm:px-4">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-white/8 bg-background/80 px-3 backdrop-blur-xl sm:px-4">
       <div className="flex min-w-0 shrink-0 items-center gap-2.5">
-        <div className="grid size-8 shrink-0 place-items-center border border-primary/50 bg-primary/10 font-mono text-[10px] font-medium text-primary">
-          AA
-        </div>
+        <svg viewBox="0 0 32 32" aria-hidden className="size-8 shrink-0 text-primary">
+          <circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" />
+          <path d="M16 8v16M8 16h16" stroke="currentColor" strokeWidth="1" />
+          <circle cx="16" cy="16" r="1.7" fill="currentColor" />
+          <path d="M16 4.5v2.4M16 25.1v2.4M4.5 16h2.4M25.1 16h2.4" stroke="var(--specimen)" strokeWidth="1.4" />
+        </svg>
         <div className="min-w-0">
-          <div className="text-[15px] leading-none font-medium tracking-tight sm:text-base">Anatomy Atlas</div>
+          <div className="font-specimen text-[17px] leading-none tracking-tight">Anatomy Atlas</div>
           <p className="kicker mt-1 hidden sm:block">Skeletal system</p>
         </div>
       </div>
       {readout ? (
-        <p className="hidden min-w-0 max-w-[14rem] truncate font-specimen text-[15px] leading-none lg:block">
-          {readout}
+        <p className="hidden min-w-0 max-w-[16rem] items-center gap-2 font-specimen text-[15px] leading-none text-specimen lg:flex">
+          <span className="size-1 shrink-0 rounded-full bg-specimen" aria-hidden />
+          <span className="truncate">{readout}</span>
         </p>
       ) : null}
       <div className="min-w-0 flex-1">
@@ -69,6 +74,7 @@ export function Header() {
               type="button"
               variant={studyMode ? 'default' : 'outline'}
               aria-pressed={studyMode}
+              className={cn(!studyMode && 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/18')}
               onClick={() => (studyMode ? exitStudy() : enterStudy('bone'))}
             >
               <BookOpen />
@@ -79,52 +85,54 @@ export function Header() {
             {studyMode ? 'Leave the current sitting' : 'Practice naming bones and landmarks'}
           </TooltipContent>
         </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Open your progress"
-              onClick={() => {
-                setProgressLoaded(true)
-                setProgressOpen(true)
-              }}
-            >
-              <BarChart3 />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Progress and mastery</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Copy link to this view"
-              onClick={copyViewLink}
-            >
-              <Link2 />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Copy link to this view</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Open controls guide"
-              onClick={() => setHelpOpen(true)}
-            >
-              <CircleHelp />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Controls</TooltipContent>
-        </Tooltip>
-        <AccountButton />
+        <div className="flex items-center rounded-lg border border-white/10 bg-white/3 p-0.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Open your progress"
+                onClick={() => {
+                  setProgressLoaded(true)
+                  setProgressOpen(true)
+                }}
+              >
+                <BarChart3 />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Progress and mastery</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Copy link to this view"
+                onClick={copyViewLink}
+              >
+                <Link2 />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Copy link to this view</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Open controls guide"
+                onClick={() => setHelpOpen(true)}
+              >
+                <CircleHelp />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Controls</TooltipContent>
+          </Tooltip>
+          <AccountButton />
+        </div>
       </div>
       {progressLoaded ? (
         <Suspense fallback={null}>

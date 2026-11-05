@@ -36,7 +36,7 @@ export function MasteryLegend() {
   return (
     <section
       aria-label="Mastery legend"
-      className="pointer-events-auto absolute right-4 bottom-32 z-20 w-52 rounded-lg border bg-card/90 px-3 py-2.5 text-[12px] backdrop-blur-sm"
+      className="atlas-placard pointer-events-auto absolute top-4 right-4 z-20 w-56 px-3.5 py-3 text-[12px]"
     >
       <h2 className="kicker">
         <button

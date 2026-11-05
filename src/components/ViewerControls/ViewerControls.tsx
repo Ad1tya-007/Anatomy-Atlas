@@ -78,6 +78,7 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
   const setSectionAmount = useAnatomyStore((state) => state.setSectionAmount)
   const setSpread = useAnatomyStore((state) => state.setSpread)
   const [fullscreen, setFullscreen] = useState(false)
+  const hasSelected = useAnatomyStore((state) => state.hasSelected)
   const sectionEnds = sectionAxis === 'off' ? null : SECTION_ENDS[sectionAxis]
 
   useEffect(() => {
@@ -95,10 +96,9 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 flex flex-col items-center gap-2 px-3">
-      <p className="kicker pointer-events-none hidden sm:block">Drag rotate · scroll zoom · right-drag pan</p>
-      <div className="pointer-events-auto flex max-w-full flex-col gap-1 overflow-x-auto rounded-lg border bg-card/80 p-1 backdrop-blur-sm">
-        <div className="flex items-center gap-1">
-          <ButtonGroup>
+      <div className="atlas-dock pointer-events-auto flex max-w-full flex-col items-center gap-1 p-1.5">
+        <div className="flex max-w-full flex-wrap items-center justify-center gap-1">
+          <ButtonGroup className="gap-0.5 rounded-lg bg-white/4 p-0.5">
             {VIEWS.map((view) => (
               <Hint
                 key={view.id}
@@ -109,7 +109,7 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="shrink-0"
+                  className="shrink-0 rounded-md"
                   onClick={() => requestPreset(view.id)}
                 >
                   {view.label}
@@ -120,7 +120,7 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
           <Separator orientation="vertical" className="mx-1 h-4" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="sm" className="shrink-0">
+              <Button type="button" variant="ghost" size="sm" className="shrink-0 rounded-md">
                 Visibility
               </Button>
             </DropdownMenuTrigger>
@@ -145,7 +145,7 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
               type="button"
               variant="ghost"
               size="sm"
-              className="shrink-0"
+              className="shrink-0 rounded-md"
               disabled={!selectedBoneId}
               onClick={() => (isolated ? clearIsolation() : toggleIsolate())}
             >
@@ -155,9 +155,9 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
           <Hint label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="icon-sm"
-              className="shrink-0"
+              className="shrink-0 rounded-md"
               aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
               onClick={toggleFullscreen}
             >
@@ -165,15 +165,15 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
             </Button>
           </Hint>
         </div>
-        <div className="flex items-center gap-1">
-          <ButtonGroup aria-label="Look">
+        <div className="flex max-w-full flex-wrap items-center justify-center gap-1">
+          <ButtonGroup aria-label="Look" className="gap-0.5 rounded-lg bg-white/4 p-0.5">
             {LOOKS.map((item) => (
               <Hint key={item.id} label={`${item.label} look`} shortcut={String(LOOKS.indexOf(item) + 1)}>
                 <Button
                   type="button"
                   variant={look === item.id ? 'default' : 'ghost'}
                   size="sm"
-                  className="shrink-0"
+                  className="shrink-0 rounded-md"
                   aria-pressed={look === item.id}
                   onClick={() => setLook(item.id)}
                 >
@@ -183,14 +183,14 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
             ))}
           </ButtonGroup>
           <Separator orientation="vertical" className="mx-1 h-4" />
-          <ButtonGroup aria-label="Section">
+          <ButtonGroup aria-label="Section" className="gap-0.5 rounded-lg bg-white/4 p-0.5">
             {SECTIONS.map((item) => (
               <Button
                 key={item.id}
                 type="button"
                 variant={sectionAxis === item.id ? 'default' : 'ghost'}
                 size="sm"
-                className="shrink-0"
+                className="shrink-0 rounded-md"
                 aria-pressed={sectionAxis === item.id}
                 onClick={() => setSectionAxis(item.id)}
               >
@@ -217,7 +217,7 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
             </div>
           ) : null}
           <Separator orientation="vertical" className="mx-1 h-4" />
-          <span className="kicker w-16 shrink-0 text-center">{spread === 0 ? 'Anatomical' : 'Spread'}</span>
+          <span className="kicker shrink-0 px-1">{spread === 0 ? 'Anatomical' : 'Spread'}</span>
           <Slider
             min={0}
             max={1}
@@ -232,6 +232,9 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
           />
         </div>
       </div>
+      <p className="pointer-events-none font-mono text-[10px] tracking-[0.18em] text-muted-foreground/80 uppercase">
+        {hasSelected ? 'Drag rotate · scroll zoom · right-drag pan' : 'Select a bone · drag rotate · scroll zoom'}
+      </p>
     </div>
   )
 }

@@ -29,9 +29,10 @@ export function HelpDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setHelpOpen}>
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg" aria-describedby={undefined}>
+      <DialogContent className="max-h-[85dvh] overflow-y-auto p-5 sm:max-w-xl" aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle className="text-base">Controls</DialogTitle>
+          <p className="kicker">Reference</p>
+          <DialogTitle className="font-specimen text-2xl leading-none tracking-tight">Controls</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 text-sm leading-6">
           <section>
@@ -72,11 +73,11 @@ export function HelpDialog() {
           <Separator />
           <section>
             <h3 className="kicker">Keyboard</h3>
-            <ul className="mt-2">
+            <ul className="mt-3 grid gap-x-8 sm:grid-cols-2">
               {SHORTCUTS.map(([key, label]) => (
                 <li
                   key={key}
-                  className="flex items-center justify-between gap-4 border-b py-1.5 text-muted-foreground last:border-0"
+                  className="flex items-center justify-between gap-4 border-b border-white/6 py-2 text-muted-foreground"
                 >
                   <span>{label}</span>
                   <Kbd>{key}</Kbd>

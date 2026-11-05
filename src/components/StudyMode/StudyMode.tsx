@@ -186,7 +186,7 @@ export function StudyCard() {
     <div className="pointer-events-none absolute inset-x-0 top-4 z-20 flex justify-center px-3">
       <Card
         size="sm"
-        className="atlas-in pointer-events-auto max-h-[min(70dvh,40rem)] w-full max-w-[28rem] gap-3 overflow-y-auto rounded-lg border-t-2 border-t-primary bg-card/90 py-4 ring-foreground/10 backdrop-blur-sm"
+        className="atlas-in atlas-placard pointer-events-auto max-h-[min(70dvh,40rem)] w-full max-w-[28rem] gap-3 overflow-y-auto rounded-xl border-t-2 border-t-primary py-4"
         aria-live="polite"
       >
         <div className="flex items-center justify-between gap-3 px-4">
@@ -304,13 +304,13 @@ export function StudyCard() {
               <p className="mt-1 font-mono text-[11px] text-muted-foreground">{bone.displayName}</p>
             ) : null}
             {showReveal && !revealed ? (
-              <div className="mt-4 grid h-16 place-items-center border border-dashed font-mono text-2xl text-muted-foreground">
+              <div className="mt-4 grid h-16 place-items-center rounded-lg border border-dashed border-specimen/40 bg-specimen/5 font-specimen text-3xl text-specimen-dim">
                 ?
               </div>
             ) : null}
             {showReveal && revealed ? (
               <div className="mt-4">
-                <p className="text-2xl leading-none font-medium tracking-tight">{correctName}</p>
+                <p className="font-specimen text-[1.75rem] leading-none tracking-tight">{correctName}</p>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">{explanation}</p>
               </div>
             ) : null}
@@ -450,14 +450,14 @@ export function StudyPanelPrompt() {
   return (
     <div className="atlas-in">
       <p className="kicker text-primary!">Study mode</p>
-      <h2 className="mt-4 font-specimen text-[2rem] leading-none tracking-tight">
+      <h2 className="mt-4 font-specimen text-[2.15rem] leading-[0.95] tracking-tight text-balance">
         {answerMode === 'locate'
           ? 'Find it on the skeleton'
           : studyKind === 'bone'
             ? 'Identify the highlighted bone'
             : 'Identify the landmark'}
       </h2>
-      <div className="mt-3 h-px w-8 bg-specimen/70" />
+      <div className="mt-4 h-px w-12 bg-linear-to-r from-specimen to-transparent" />
       <p className="mt-3 text-sm leading-6 text-muted-foreground">
         {studyKind === 'bone' ? bonePrompt : landmarkPrompt}
       </p>

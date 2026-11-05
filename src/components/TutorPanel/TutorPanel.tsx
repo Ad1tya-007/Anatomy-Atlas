@@ -128,7 +128,7 @@ function QuizCard({ question, fallback }: { question: GeneratedQuestion; fallbac
   const selectLandmark = useAnatomyStore((state) => state.selectLandmark)
   const correct = picked === question.answerId
   return (
-    <Card className="gap-3 p-3">
+    <Card className="gap-3 border-l-2 border-l-primary bg-white/2 p-3.5">
       <p className="kicker">{fallback ? 'Practice question' : 'Question'}</p>
       <p className="text-sm font-medium">{question.prompt}</p>
       <div role="group" aria-label="Choices" className="grid gap-1.5">
@@ -211,7 +211,11 @@ function AssistantPart({ part }: { part: MessagePart }) {
 function Message({ message }: { message: TutorUIMessage }) {
   if (message.role === 'user') {
     const text = message.parts.map((part) => (part.type === 'text' ? part.text : '')).join('')
-    return <div className="ml-8 self-end rounded-lg bg-secondary px-3 py-2 text-sm whitespace-pre-wrap">{text}</div>
+    return (
+      <div className="ml-10 max-w-[90%] self-end rounded-2xl rounded-br-md bg-primary/14 px-3.5 py-2.5 text-sm leading-6 whitespace-pre-wrap ring-1 ring-primary/25">
+        {text}
+      </div>
+    )
   }
   return (
     <div className="grid gap-2">
@@ -338,11 +342,15 @@ export default function TutorPanel({ className }: { className?: string }) {
   }
 
   return (
-    <section aria-label="Tutor" className={cn('h-full min-h-0 flex-col bg-card', className)}>
-      <div className="flex items-center gap-1 border-b px-4 py-2">
+    <section aria-label="Tutor" className={cn('h-full min-h-0 flex-col bg-transparent', className)}>
+      <div className="flex items-center gap-2 border-b border-white/6 px-4 py-3">
+        <span
+          className="mt-0.5 size-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]"
+          aria-hidden
+        />
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold">Atlas tutor</h2>
-          <p className="text-[0.7rem] leading-4 text-muted-foreground">
+          <h2 className="font-specimen text-lg leading-none tracking-tight">Atlas tutor</h2>
+          <p className="mt-1 text-[0.7rem] leading-4 text-muted-foreground">
             Educational use only, not medical advice. Answers come from this atlas and can be wrong.
           </p>
         </div>
@@ -362,21 +370,30 @@ export default function TutorPanel({ className }: { className?: string }) {
       <ScrollArea className="min-h-0 flex-1">
         <div ref={log} className="flex flex-col gap-4 px-4 py-4" aria-live="polite" aria-busy={busy}>
           {messages.length === 0 ? (
-            <div className="grid gap-3">
-              <p className="text-sm text-muted-foreground">
-                Ask about any bone, landmark, or joint in the atlas. The tutor cites its sources and can move the viewer
-                to show you.
-              </p>
+            <div className="grid gap-4 pt-2">
+              <div>
+                <p className="kicker">Start here</p>
+                <p className="mt-2 font-specimen text-[1.65rem] leading-none tracking-tight text-balance">
+                  Ask the atlas anything it can show you.
+                </p>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  Ask about any bone, landmark, or joint in the atlas. The tutor cites its sources and can move the
+                  viewer to show you.
+                </p>
+              </div>
               <div className="grid gap-1.5">
-                {SUGGESTIONS.map((suggestion) => (
+                {SUGGESTIONS.map((suggestion, index) => (
                   <Button
                     key={suggestion}
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-auto justify-start py-1.5 text-left whitespace-normal"
+                    className="h-auto justify-start gap-3 rounded-lg border-white/8 bg-white/2 py-2.5 text-left font-normal whitespace-normal hover:border-primary/40 hover:bg-primary/8"
                     onClick={() => ask(suggestion)}
                   >
+                    <span aria-hidden className="font-mono text-[10px] text-primary">
+                      0{index + 1}
+                    </span>
                     {suggestion}
                   </Button>
                 ))}
@@ -403,8 +420,8 @@ export default function TutorPanel({ className }: { className?: string }) {
         </div>
       </ScrollArea>
 
-      <form onSubmit={submit} className="grid gap-1 border-t p-3">
-        <div className="flex items-end gap-2">
+      <form onSubmit={submit} className="grid gap-1 border-t border-white/6 p-3">
+        <div className="rounded-xl border border-white/10 bg-black/25 p-1.5 focus-within:border-primary/50">
           <Textarea
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -413,17 +430,20 @@ export default function TutorPanel({ className }: { className?: string }) {
             rows={2}
             placeholder="Ask about the skeleton…"
             aria-label="Ask the tutor"
-            className="max-h-40 min-h-10 resize-none text-sm"
+            className="max-h-40 min-h-12 resize-none border-0 bg-transparent px-2 py-1.5 text-sm shadow-none focus-visible:ring-0"
           />
-          {busy ? (
-            <Button type="button" size="icon" variant="secondary" aria-label="Stop" onClick={() => void stop()}>
-              <Square />
-            </Button>
-          ) : (
-            <Button type="submit" size="icon" aria-label="Send" disabled={!draft.trim()}>
-              <ArrowUp />
-            </Button>
-          )}
+          <div className="flex items-center justify-between px-1 pb-0.5">
+            <p className="kicker pl-1">Enter to send</p>
+            {busy ? (
+              <Button type="button" size="icon" variant="secondary" aria-label="Stop" onClick={() => void stop()}>
+                <Square />
+              </Button>
+            ) : (
+              <Button type="submit" size="icon" aria-label="Send" disabled={!draft.trim()}>
+                <ArrowUp />
+              </Button>
+            )}
+          </div>
         </div>
         {draft.length > QUESTION_MAX * 0.8 ? (
           <p className="text-right text-[0.7rem] text-muted-foreground">

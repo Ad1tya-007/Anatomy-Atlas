@@ -97,8 +97,8 @@ function Marker({
               }
               store.selectLandmark(marker.landmarkId)
             }}
-            className={`rounded-lg border bg-card/92 px-2 py-0.5 text-[11px] leading-4 whitespace-nowrap ${
-              active ? 'border-primary text-foreground' : 'border-border text-foreground'
+            className={`atlas-placard px-2 py-0.5 text-[11px] leading-4 whitespace-nowrap ${
+              active ? 'ring-1 ring-primary' : ''
             }`}
           >
             {record.landmark.name}
@@ -226,9 +226,9 @@ export function BoneLabel({ index }: { index: SkeletonIndex }) {
     <group ref={group}>
       <Html center distanceFactor={1.7} zIndexRange={[12, 0]} wrapperClass="pointer-events-none">
         <div className="pointer-events-none flex w-max flex-col items-center">
-          <div className="w-max rounded-lg border bg-card/92 px-2.5 py-1.5 whitespace-nowrap">
+          <div className="atlas-placard w-max px-3 py-2 text-center whitespace-nowrap">
             <div className="kicker">{REGION_LABEL[bone.region]}</div>
-            <div className="font-specimen text-[13px] leading-tight">{bone.name}</div>
+            <div className="mt-1 font-specimen text-sm leading-none">{bone.name}</div>
           </div>
           <div className="h-2.5 w-px bg-specimen" />
         </div>

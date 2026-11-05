@@ -31,17 +31,17 @@ export function AnatomySidebar({ className }: { className?: string }) {
   }
 
   return (
-    <aside className={cn('h-full min-h-0 flex-col border-r bg-sidebar text-sidebar-foreground', className)}>
-      <div className="border-b px-4 py-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="kicker">Navigator</h2>
-          <Badge variant="outline" className="font-mono">
+    <aside className={cn('h-full min-h-0 flex-col bg-transparent text-sidebar-foreground', className)}>
+      <div className="border-b border-white/6 px-4 pt-4 pb-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="font-specimen text-xl leading-none tracking-tight">Navigator</h2>
+          <Badge variant="outline" className="font-mono tracking-wide">
             {classification === 'all' ? 'All classes' : CLASS_LABEL[classification]}
           </Badge>
         </div>
         <fieldset className="mt-3">
-          <legend className="text-xs text-muted-foreground">Bone classification</legend>
-          <div className="mt-2 grid grid-cols-3 gap-1">
+          <legend className="kicker">Bone classification</legend>
+          <div className="mt-2 grid grid-cols-3 gap-px overflow-hidden rounded-lg bg-white/8 p-px">
             {CLASS_OPTIONS.map((option) => {
               const checked = classification === option.value
               return (
@@ -50,7 +50,10 @@ export function AnatomySidebar({ className }: { className?: string }) {
                   size="sm"
                   variant="outline"
                   pressed={checked}
-                  className={cn('h-7 w-full px-1 font-normal', checked && 'border-primary bg-primary/15 text-primary')}
+                  className={cn(
+                    'h-7 w-full rounded-none border-0 bg-card px-1 font-normal hover:bg-white/4',
+                    checked && 'bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary',
+                  )}
                   onPressedChange={(pressed) => {
                     if (pressed) setClassification(option.value)
                   }}
@@ -63,16 +66,16 @@ export function AnatomySidebar({ className }: { className?: string }) {
         </fieldset>
       </div>
       <Tabs value={tab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
-        <div className="border-b px-3 py-2">
-          <TabsList className="grid h-8 w-full grid-cols-3">
+        <div className="border-b border-white/6 px-4">
+          <TabsList variant="line" className="h-10 w-full justify-start gap-1 bg-transparent">
             <TabsTrigger value="bones">Bones</TabsTrigger>
             <TabsTrigger value="joints">
               Joints
-              {selectedJointId ? <span className="size-1.5 bg-primary" aria-hidden /> : null}
+              {selectedJointId ? <span className="size-1.5 rounded-full bg-primary" aria-hidden /> : null}
             </TabsTrigger>
             <TabsTrigger value="walks">
               Walks
-              {walkId ? <span className="size-1.5 bg-primary" aria-hidden /> : null}
+              {walkId ? <span className="size-1.5 rounded-full bg-primary" aria-hidden /> : null}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -94,7 +97,7 @@ export function AnatomySidebar({ className }: { className?: string }) {
           </ScrollArea>
         </TabsContent>
       </Tabs>
-      <p className="border-t px-4 py-3 text-[11px] leading-4 text-muted-foreground">
+      <p className="border-t border-white/6 px-4 py-3 text-[11px] leading-4 text-muted-foreground">
         Model: Open3D project, CC BY-SA. Left and right are the skeleton’s own sides.
       </p>
     </aside>
@@ -122,8 +125,10 @@ function JointNav() {
             <button
               type="button"
               className={cn(
-                'flex h-8 min-w-0 flex-1 items-center px-2 text-left text-[13px]',
-                active ? 'bg-primary/15 font-medium text-foreground' : 'text-foreground/90 hover:bg-muted',
+                'flex h-8 min-w-0 flex-1 items-center rounded-md px-2 text-left text-[13px]',
+                active
+                  ? 'bg-primary/12 font-medium text-foreground shadow-[inset_2px_0_0_0_var(--primary)]'
+                  : 'text-foreground/90 hover:bg-white/4',
               )}
               aria-current={active && !paired ? 'true' : undefined}
               onClick={() => selectJoint(joint.id, paired ? 'left' : undefined)}
@@ -143,10 +148,10 @@ function JointNav() {
                       aria-label={`${label === 'L' ? 'Left' : 'Right'} ${joint.name}`}
                       aria-pressed={pressed}
                       className={cn(
-                        'grid size-7 place-items-center font-mono text-[10px] font-medium',
+                        'grid size-7 place-items-center rounded-md font-mono text-[10px] font-medium',
                         pressed
                           ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                          : 'text-muted-foreground hover:bg-white/6 hover:text-foreground',
                       )}
                       onClick={() => selectJoint(joint.id, side)}
                     >
@@ -178,8 +183,10 @@ function WalkNav() {
         <button
           type="button"
           className={cn(
-            'flex h-8 w-full items-center px-2 text-left text-[13px]',
-            weakestActive ? 'bg-primary/15 font-medium text-foreground' : 'text-foreground/90 hover:bg-muted',
+            'flex h-8 w-full items-center rounded-md px-2 text-left text-[13px]',
+            weakestActive
+              ? 'bg-primary/12 font-medium text-foreground shadow-[inset_2px_0_0_0_var(--primary)]'
+              : 'text-foreground/90 hover:bg-white/4',
           )}
           aria-current={weakestActive ? 'true' : undefined}
           onClick={() => startWeakestWalk(mastery)}
@@ -195,13 +202,16 @@ function WalkNav() {
             key={walk.id}
             type="button"
             className={cn(
-              'flex h-8 w-full items-center px-2 text-left text-[13px]',
-              active ? 'bg-primary/15 font-medium text-foreground' : 'text-foreground/90 hover:bg-muted',
+              'flex h-8 w-full items-center rounded-md px-2 text-left text-[13px]',
+              active
+                ? 'bg-primary/12 font-medium text-foreground shadow-[inset_2px_0_0_0_var(--primary)]'
+                : 'text-foreground/90 hover:bg-white/4',
             )}
             aria-current={active ? 'true' : undefined}
             onClick={() => startWalk(walk.id)}
           >
             <span className="truncate">{walk.title}</span>
+            <span className="ml-auto pl-2 font-mono text-[10px] text-muted-foreground">{walk.stops.length}</span>
             {active ? <span className="sr-only"> selected</span> : null}
           </button>
         )

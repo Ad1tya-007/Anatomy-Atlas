@@ -35,16 +35,19 @@ function DesktopSidePanel() {
     <Tabs
       value={sidePanel}
       onValueChange={(value) => setSidePanel(value as SidePanel)}
-      className="hidden w-[23rem] shrink-0 gap-0 border-l bg-card lg:flex"
+      className="atlas-panel hidden w-[23.5rem] shrink-0 gap-0 overflow-hidden lg:flex"
     >
-      <TabsList className="m-2 mb-0 grid w-auto grid-cols-2">
-        <TabsTrigger value="details">
-          <Info /> Details
-        </TabsTrigger>
-        <TabsTrigger value="tutor">
-          <MessagesSquare /> Tutor
-        </TabsTrigger>
-      </TabsList>
+      <div className="flex items-end justify-between gap-3 border-b border-white/6 px-4">
+        <p className="kicker pb-2.5">Reference</p>
+        <TabsList variant="line" className="h-10 bg-transparent">
+          <TabsTrigger value="details">
+            <Info /> Details
+          </TabsTrigger>
+          <TabsTrigger value="tutor">
+            <MessagesSquare /> Tutor
+          </TabsTrigger>
+        </TabsList>
+      </div>
       <TabsContent value="details" className="min-h-0">
         <AnatomyInfoPanel id="bone-info" className="flex" />
       </TabsContent>
@@ -61,11 +64,11 @@ function MobileBar() {
   const panel = useAnatomyStore((state) => state.mobilePanel)
   const setMobilePanel = useAnatomyStore((state) => state.setMobilePanel)
   return (
-    <div className="relative z-[60] grid shrink-0 grid-cols-3 border-t bg-card lg:hidden">
+    <div className="relative z-[60] grid shrink-0 grid-cols-3 divide-x divide-white/8 border-t border-white/10 bg-card/92 backdrop-blur-xl lg:hidden">
       <Button
         type="button"
-        variant={panel === 'nav' ? 'secondary' : 'ghost'}
-        className="h-12 rounded-none"
+        variant="ghost"
+        className={`h-12 rounded-none ${panel === 'nav' ? 'text-primary shadow-[inset_0_2px_0_0_var(--primary)]' : 'text-muted-foreground'}`}
         aria-pressed={panel === 'nav'}
         onClick={() => setMobilePanel(panel === 'nav' ? 'none' : 'nav')}
       >
@@ -74,8 +77,8 @@ function MobileBar() {
       </Button>
       <Button
         type="button"
-        variant={panel === 'info' ? 'secondary' : 'ghost'}
-        className="h-12 rounded-none border-l"
+        variant="ghost"
+        className={`h-12 rounded-none ${panel === 'info' ? 'text-primary shadow-[inset_0_2px_0_0_var(--primary)]' : 'text-muted-foreground'}`}
         aria-pressed={panel === 'info'}
         onClick={() => setMobilePanel(panel === 'info' ? 'none' : 'info')}
       >
@@ -84,8 +87,8 @@ function MobileBar() {
       </Button>
       <Button
         type="button"
-        variant={panel === 'tutor' ? 'secondary' : 'ghost'}
-        className="h-12 rounded-none border-l"
+        variant="ghost"
+        className={`h-12 rounded-none ${panel === 'tutor' ? 'text-primary shadow-[inset_0_2px_0_0_var(--primary)]' : 'text-muted-foreground'}`}
         aria-pressed={panel === 'tutor'}
         onClick={() => setMobilePanel(panel === 'tutor' ? 'none' : 'tutor')}
       >
@@ -102,12 +105,20 @@ function MobileDrawers() {
   return (
     <>
       <Sheet open={panel === 'nav'} onOpenChange={(open) => setMobilePanel(open ? 'nav' : 'none')}>
-        <SheetContent side="bottom" showCloseButton={false} className="top-14 bottom-12 h-auto max-h-none gap-0 p-0">
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          className="top-14 bottom-12 h-auto max-h-none gap-0 p-0 lg:hidden"
+        >
           <AnatomySidebar className="flex h-full" />
         </SheetContent>
       </Sheet>
       <Sheet open={panel === 'info'} onOpenChange={(open) => setMobilePanel(open ? 'info' : 'none')}>
-        <SheetContent side="bottom" showCloseButton={false} className="top-14 bottom-12 h-auto max-h-none gap-0 p-0">
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          className="top-14 bottom-12 h-auto max-h-none gap-0 p-0 lg:hidden"
+        >
           <AnatomyInfoPanel className="flex h-full" />
         </SheetContent>
       </Sheet>
@@ -144,8 +155,8 @@ export default function App() {
           Skip to bone details
         </a>
         <Header />
-        <div className="flex min-h-0 flex-1">
-          <AnatomySidebar className="hidden w-[19.5rem] shrink-0 lg:flex" />
+        <div className="flex min-h-0 flex-1 gap-2 px-2 pt-2 pb-2">
+          <AnatomySidebar className="atlas-panel hidden w-80 shrink-0 overflow-hidden lg:flex" />
           <Viewer />
           <DesktopSidePanel />
         </div>

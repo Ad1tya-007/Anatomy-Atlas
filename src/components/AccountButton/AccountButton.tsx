@@ -30,7 +30,7 @@ export function AccountButton() {
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="icon"
             aria-label={label}
             className="relative"

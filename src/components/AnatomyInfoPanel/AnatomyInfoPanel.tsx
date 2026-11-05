@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import { Card, CardContent } from '@/components/ui/card'
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from '@/components/ui/empty'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { contralateralId, getBone } from '@/data/bones'
@@ -24,8 +24,8 @@ function memberLabel(bone: Bone, members: Bone[]): string {
 function StructureTitle({ children }: { children: string }) {
   return (
     <>
-      <h2 className="mt-3 font-specimen text-[2rem] leading-none tracking-tight">{children}</h2>
-      <div className="mt-3 h-px w-8 bg-specimen/70" />
+      <h2 className="mt-4 font-specimen text-[2.35rem] leading-[0.95] tracking-tight text-balance">{children}</h2>
+      <div className="mt-4 h-px w-12 bg-linear-to-r from-specimen to-transparent" />
     </>
   )
 }
@@ -35,7 +35,7 @@ function RecordButton({ children, onClick }: { children: string; onClick: () => 
     <Button
       type="button"
       variant="ghost"
-      className="h-auto w-full justify-start gap-2 px-2 py-2 text-left text-sm font-normal whitespace-normal"
+      className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left text-sm font-normal whitespace-normal hover:bg-white/4"
       onClick={onClick}
     >
       <span className="size-1.5 shrink-0 bg-muted-foreground" aria-hidden />
@@ -49,11 +49,11 @@ function IsolateAction() {
   const toggleIsolate = useAnatomyStore((state) => state.toggleIsolate)
   const clearIsolation = useAnatomyStore((state) => state.clearIsolation)
   return isolated ? (
-    <Button type="button" onClick={clearIsolation}>
+    <Button type="button" className="w-full" onClick={clearIsolation}>
       Show full skeleton
     </Button>
   ) : (
-    <Button type="button" variant="outline" onClick={toggleIsolate}>
+    <Button type="button" variant="outline" className="w-full" onClick={toggleIsolate}>
       Isolate
     </Button>
   )
@@ -96,7 +96,7 @@ function JointPanel({ joint }: { joint: Joint }) {
           ))}
         </ButtonGroup>
       ) : null}
-      <p className="mt-4 text-sm leading-6 text-foreground/90">{joint.description}</p>
+      <p className="mt-4 max-w-[38ch] text-sm leading-6 text-foreground/90">{joint.description}</p>
       <Separator className="my-5" />
       <section>
         <h3 className="kicker">Bones</h3>
@@ -111,7 +111,7 @@ function JointPanel({ joint }: { joint: Joint }) {
       {joint.movements.length > 0 ? (
         <section className="mt-4">
           <h3 className="kicker">Movements</h3>
-          <p className="mt-2 text-sm leading-6 text-foreground/90">{joint.movements.join(', ')}</p>
+          <p className="mt-2 text-sm leading-6 text-pretty text-foreground/90">{joint.movements.join(', ')}</p>
         </section>
       ) : null}
       {landmarks.length > 0 ? (
@@ -152,25 +152,38 @@ export function AnatomyInfoPanel({ className, id }: { className?: string; id?: s
   const relatedJoints = bone && !joint ? jointsForBone(bone.id) : []
 
   return (
-    <aside id={id} tabIndex={-1} className={cn('h-full min-h-0 flex-col bg-card focus:outline-none', className)}>
+    <aside id={id} tabIndex={-1} className={cn('h-full min-h-0 flex-col bg-transparent focus:outline-none', className)}>
       <ScrollArea className="min-h-0 flex-1">
-        <div className="px-5 py-5">
+        <div className="px-6 py-6">
           {studyMode && !studyRevealed ? (
             <StudyPanelPrompt />
           ) : joint ? (
             <JointPanel joint={joint} />
           ) : !bone ? (
-            <Empty className="rounded-lg border border-solid bg-card px-4 pt-10">
+            <Empty className="border-0 bg-transparent px-0 pt-8">
               <EmptyHeader>
-                <EmptyMedia variant="icon" className="bg-background text-specimen-dim">
+                <EmptyMedia variant="icon" className="size-10 rounded-lg bg-primary/10 text-primary">
                   <BoneIcon />
                 </EmptyMedia>
-                <EmptyTitle className="text-lg">Explore the skeleton</EmptyTitle>
-                <EmptyDescription className="text-sm leading-6">
+                <h2 className="font-specimen text-[2rem] leading-none tracking-tight">Explore the skeleton</h2>
+                <EmptyDescription className="max-w-[32ch] text-sm leading-6">
                   Select a bone in the 3D model, or choose a structure from the navigator.
                 </EmptyDescription>
               </EmptyHeader>
-              <p className="kicker">J search · click a bone · study</p>
+              <ul className="grid w-fit gap-2 text-left">
+                {[
+                  ['J', 'Search the atlas'],
+                  ['Click', 'Select a bone'],
+                  ['Study', 'Practice a name'],
+                ].map(([key, label]) => (
+                  <li key={key} className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <span className="grid h-6 min-w-6 place-items-center rounded-md border border-white/10 bg-white/3 px-1.5 font-mono text-[10px] tracking-wide text-foreground">
+                      {key}
+                    </span>
+                    {label}
+                  </li>
+                ))}
+              </ul>
             </Empty>
           ) : (
             <article key={bone.id} className="atlas-in">
@@ -226,15 +239,15 @@ export function AnatomyInfoPanel({ className, id }: { className?: string; id?: s
                   The left and right bones are paired. Landmarks on this side match the opposite side.
                 </p>
               ) : null}
-              <p className="mt-4 text-sm leading-6 text-foreground/90">{bone.description}</p>
+              <p className="mt-4 max-w-[40ch] text-sm leading-6 text-pretty text-foreground/90">{bone.description}</p>
               <Separator className="my-5" />
               <dl className="grid gap-4">
                 <div>
                   <dt className="kicker">Articulations</dt>
                   <dd className="mt-2">
-                    <ul className="space-y-1">
+                    <ul className="divide-y divide-white/6 border-y border-white/6">
                       {bone.articulations.map((item) => (
-                        <li key={item} className="text-sm leading-5 text-foreground/90">
+                        <li key={item} className="py-2 text-sm leading-5 text-foreground/90">
                           {item}
                         </li>
                       ))}
@@ -279,7 +292,7 @@ export function AnatomyInfoPanel({ className, id }: { className?: string; id?: s
                 </div>
               ) : null}
               {landmark && landmark.boneId === bone.id ? (
-                <Card size="sm" className="mt-5 bg-primary/8 ring-primary/40">
+                <Card size="sm" className="mt-5 border-l-2 border-l-primary bg-primary/8 ring-primary/30">
                   <CardContent className="grid gap-2">
                     <h3 className="font-specimen text-lg leading-tight tracking-tight">{landmark.landmark.name}</h3>
                     <p className="text-sm leading-6 text-foreground/90">{landmark.landmark.description}</p>

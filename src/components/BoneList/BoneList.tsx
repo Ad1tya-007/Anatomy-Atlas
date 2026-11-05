@@ -60,8 +60,9 @@ function BoneRow({ entry, depth }: { entry: NavEntry; depth: number }) {
           variant="ghost"
           size="sm"
           className={cn(
-            'h-8 min-w-0 flex-1 justify-start px-2 font-normal',
-            active && 'bg-primary/15 font-medium text-foreground hover:bg-primary/20',
+            'h-8 min-w-0 flex-1 justify-start rounded-md px-2 font-normal',
+            active &&
+              'bg-primary/12 font-medium text-foreground shadow-[inset_2px_0_0_0_var(--primary)] hover:bg-primary/16',
           )}
           aria-current={active && !paired ? 'true' : undefined}
           onClick={() => {
@@ -146,8 +147,8 @@ export function BoneList() {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'kicker h-7 flex-1 justify-start px-1 hover:bg-transparent',
-                  activeRegion === region.id ? 'text-primary!' : 'text-muted-foreground',
+                  'h-8 flex-1 justify-start px-1 font-mono text-[10px] font-medium tracking-[0.16em] uppercase hover:bg-transparent',
+                  activeRegion === region.id ? 'text-primary' : 'text-muted-foreground',
                 )}
                 onClick={() => {
                   setCollapsed((state) => ({ ...state, [region.id]: false }))

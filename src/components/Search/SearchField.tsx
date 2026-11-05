@@ -54,7 +54,7 @@ export function SearchField() {
       <label htmlFor={inputId} className="sr-only">
         Search bones, joints, landmarks, and walks
       </label>
-      <InputGroup className="h-9 bg-background">
+      <InputGroup className="h-9 rounded-lg border-white/10 bg-white/3 shadow-none">
         <InputGroupAddon>
           <Search />
         </InputGroupAddon>
@@ -111,7 +111,7 @@ export function SearchField() {
         <div
           id={listId}
           role="listbox"
-          className="absolute top-[calc(100%+6px)] z-40 max-h-80 w-full overflow-auto border bg-popover py-1 text-popover-foreground shadow-md"
+          className="atlas-placard absolute top-[calc(100%+8px)] z-40 max-h-80 w-full overflow-auto py-1 text-popover-foreground"
         >
           {results.length === 0 ? (
             <p className="px-3 py-3 text-sm leading-5 text-muted-foreground">
@@ -125,8 +125,8 @@ export function SearchField() {
                 type="button"
                 role="option"
                 aria-selected={index === active}
-                className={`flex w-full items-center gap-3 px-3 py-2 text-left ${
-                  index === active ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/70'
+                className={`flex w-full items-center gap-3 px-3 py-2.5 text-left ${
+                  index === active ? 'bg-primary/12 text-foreground' : 'hover:bg-white/4'
                 }`}
                 onMouseEnter={() => setActive(index)}
                 onClick={() => choose(result)}

@@ -17,9 +17,12 @@ export function LandmarkList({ landmarks, boneId }: { landmarks: Landmark[]; bon
 
   return (
     <section className="mt-6" aria-labelledby={`landmarks-${boneId}`}>
-      <h3 id={`landmarks-${boneId}`} className="kicker">
-        Bony landmarks
-      </h3>
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 id={`landmarks-${boneId}`} className="kicker">
+          Bony landmarks
+        </h3>
+        <span className="font-mono text-[10px] text-muted-foreground">{landmarks.length}</span>
+      </div>
       <ul className="mt-2">
         {landmarks.map((landmark) => {
           const active = !answerHidden && landmark.id === selectedLandmarkId
@@ -30,8 +33,9 @@ export function LandmarkList({ landmarks, boneId }: { landmarks: Landmark[]; bon
                 variant="ghost"
                 aria-current={active ? 'true' : undefined}
                 className={cn(
-                  'h-auto w-full justify-start gap-2 px-2 py-2 text-left font-normal whitespace-normal',
-                  active && 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
+                  'h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left font-normal whitespace-normal',
+                  active &&
+                    'bg-primary/12 text-primary shadow-[inset_2px_0_0_0_var(--primary)] hover:bg-primary/16 hover:text-primary',
                 )}
                 onClick={() => selectLandmark(landmark.id)}
               >

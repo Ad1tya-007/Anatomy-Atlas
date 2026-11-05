@@ -25,7 +25,6 @@ export function Viewer() {
   const studyMode = useAnatomyStore((state) => state.studyMode)
   const studyRevealed = useAnatomyStore((state) => state.studyRevealed)
   const studyAnswerMode = useAnatomyStore((state) => state.studyAnswerMode)
-  const hasSelected = useAnatomyStore((state) => state.hasSelected)
   const look = useAnatomyStore((state) => state.look)
   const mastery = useMasteryByBone()
   const hoverName = getBone(hoveredBoneId)?.displayName
@@ -37,7 +36,7 @@ export function Viewer() {
     <div
       ref={container}
       data-model-state={modelState}
-      className={`relative min-h-0 min-w-0 flex-1 bg-background [&:fullscreen]:h-screen [&:fullscreen]:w-screen ${
+      className={`atlas-stage relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-[14px] [&:fullscreen]:h-screen [&:fullscreen]:w-screen [&:fullscreen]:rounded-none [&:fullscreen]:shadow-none ${
         hoveredBoneId ? '[&_canvas]:cursor-pointer' : ''
       }`}
     >
@@ -50,10 +49,11 @@ export function Viewer() {
           <AnatomyScene />
         </Suspense>
       </ModelErrorBoundary>
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(circle_at_center,transparent_42%,rgb(0_0_0/0.42)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_center,transparent_28%,rgb(0_0_0/0.55)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-[12%] bottom-0 z-[1] h-40 bg-[radial-gradient(ellipse_at_bottom,rgb(231_215_195/0.09),transparent_70%)]" />
       {modelState === 'loading' ? (
-        <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center">
-          <div className="w-56 rounded-lg border bg-card/80 px-3 py-2 text-sm text-muted-foreground backdrop-blur-sm">
+        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center pb-24">
+          <div className="atlas-placard w-60 px-3.5 py-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Spinner />
               Preparing the skeleton…
@@ -66,7 +66,7 @@ export function Viewer() {
       ) : null}
       {modelState === 'error' ? (
         <div className="absolute inset-0 z-10 grid place-items-center px-6">
-          <Empty className="max-w-sm rounded-lg border border-solid bg-card">
+          <Empty className="atlas-placard max-w-sm border-solid">
             <EmptyHeader>
               <EmptyTitle className="text-lg">Unable to load the 3D skeleton.</EmptyTitle>
               <EmptyDescription className="text-sm leading-6">
@@ -80,19 +80,14 @@ export function Viewer() {
         </div>
       ) : null}
       {showHover ? (
-        <div className="pointer-events-none absolute top-4 left-4 z-10 rounded-lg border bg-card/92 px-2.5 py-1 text-[13px]">
-          {hoverName}
+        <div className="atlas-placard pointer-events-none absolute top-4 left-4 z-10 px-3 py-2">
+          <p className="font-specimen text-[15px] leading-none">{hoverName}</p>
           {look === 'mastery' ? (
-            <span className="ml-2 font-mono text-[11px] text-muted-foreground">
-              {hoverRecall === undefined ? 'not studied' : `${Math.round(hoverRecall * 100)}% recall`}
-            </span>
+            <p className="mt-1.5 font-mono text-[10px] tracking-wide text-muted-foreground uppercase">
+              {hoverRecall === undefined ? 'Not studied' : `${Math.round(hoverRecall * 100)}% recall`}
+            </p>
           ) : null}
         </div>
-      ) : null}
-      {modelState === 'ready' && !hasSelected ? (
-        <p className="pointer-events-none absolute bottom-28 left-4 z-10 font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
-          Select a bone
-        </p>
       ) : null}
       {modelState === 'ready' ? <MasteryLegend /> : null}
       {modelState !== 'error' ? <ViewerControls container={container} /> : null}
