@@ -1,4 +1,5 @@
 import { useAnatomyStore } from '@/store/anatomyStore'
+import type { Vec3 } from '@/types/anatomy'
 import { OrbitControls } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useRef } from 'react'
@@ -7,6 +8,8 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 
 const HOME_POSITION = new Vector3(0.85, 0.16, 3.35)
 const HOME_TARGET = new Vector3(0, 0.04, 0)
+const SETTLE_MS = 250
+const MOVE_EPSILON = 1e-4
 
 export function CameraController() {
   const camera = useThree((state) => state.camera)
@@ -15,6 +18,13 @@ export function CameraController() {
   const goalPosition = useRef(HOME_POSITION.clone())
   const goalTarget = useRef(HOME_TARGET.clone())
   const animating = useRef(false)
+  const lastPosition = useRef(new Vector3())
+  const lastTarget = useRef(new Vector3())
+  const movedAt = useRef<number | null>(null)
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const invalidate = useThree((state) => state.invalidate)
+
+  useEffect(() => () => clearTimeout(settleTimer.current), [])
 
   useLayoutEffect(() => {
     camera.position.copy(HOME_POSITION)
@@ -32,16 +42,16 @@ export function CameraController() {
       goalPosition.current.set(...request.position)
       goalTarget.current.set(...request.target)
       animating.current = true
+      invalidate()
     }
-  }, [request])
+  }, [invalidate, request])
 
-  useFrame(({ camera }, delta) => {
+  useFrame((state, delta) => {
     const orbit = controls.current
     if (!orbit || !animating.current) return
-    const reduce =
-      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const alpha = 1 - Math.exp(-delta * (reduce ? 26 : 4.4))
-    const perspective = camera as PerspectiveCamera | OrthographicCamera
+    const perspective = state.camera as PerspectiveCamera | OrthographicCamera
     perspective.position.lerp(goalPosition.current, alpha)
     orbit.target.lerp(goalTarget.current, alpha)
     orbit.update()
@@ -53,8 +63,34 @@ export function CameraController() {
       orbit.target.copy(goalTarget.current)
       animating.current = false
       orbit.update()
+    } else {
+      state.invalidate()
     }
   }, 1)
+
+  useFrame((state) => {
+    const orbit = controls.current
+    if (!orbit) return
+    const { camera: view } = state
+    const now = performance.now()
+    const moved =
+      view.position.distanceToSquared(lastPosition.current) > MOVE_EPSILON ** 2 ||
+      orbit.target.distanceToSquared(lastTarget.current) > MOVE_EPSILON ** 2
+    if (moved) {
+      lastPosition.current.copy(view.position)
+      lastTarget.current.copy(orbit.target)
+      movedAt.current = now
+      clearTimeout(settleTimer.current)
+      settleTimer.current = setTimeout(() => state.invalidate(), SETTLE_MS + 20)
+      return
+    }
+    if (movedAt.current === null || now - movedAt.current < SETTLE_MS) return
+    movedAt.current = null
+    useAnatomyStore.getState().setCameraPose({
+      position: view.position.toArray() as Vec3,
+      target: orbit.target.toArray() as Vec3,
+    })
+  }, 2)
 
   return (
     <OrbitControls

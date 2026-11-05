@@ -17,8 +17,7 @@ export function useKeyboardShortcuts(): void {
           store.setHelpOpen(false)
           return
         }
-        const drawerOpen =
-          store.mobilePanel !== 'none' && window.matchMedia('(max-width: 1023px)').matches
+        const drawerOpen = store.mobilePanel !== 'none' && window.matchMedia('(max-width: 1023px)').matches
         if (drawerOpen) {
           event.preventDefault()
           event.stopPropagation()
@@ -57,6 +56,10 @@ export function useKeyboardShortcuts(): void {
       }
       if (event.key === '3') {
         store.setLook('radiograph')
+        return
+      }
+      if (event.key === '4') {
+        store.setLook('mastery')
         return
       }
       const key = event.key.toLowerCase()

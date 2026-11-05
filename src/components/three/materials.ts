@@ -1,3 +1,4 @@
+import { masteryColorFor } from '@/components/three/masteryPaint'
 import type { BoneVisual } from '@/utils/anatomy'
 import { lookPaint } from '@/utils/specimenMotion'
 import type { LookName } from '@/types/anatomy'
@@ -103,7 +104,48 @@ function writeRadiograph(target: Paint, visual: BoneVisual): void {
   if (visual === 'ghost') target.emissiveIntensity = 0.05
 }
 
-function writePaint(target: Paint, base: Color, baseRoughness: number, visual: BoneVisual, look: LookName): void {
+const MASTERY_SELECTED = new Color('#ffffff')
+
+/** Each bone takes its mastery band color; selection still reads through a lift toward white. */
+function writeMastery(target: Paint, visual: BoneVisual, boneId: string | undefined): void {
+  const band = masteryColorFor(boneId)
+  target.color.copy(band)
+  target.emissive.copy(band)
+  target.emissiveIntensity = 0.08
+  target.roughness = 0.62
+  if (visual === 'selected') {
+    target.color.copy(band).lerp(MASTERY_SELECTED, 0.3)
+    target.emissiveIntensity = 0.4
+    return
+  }
+  if (visual === 'hover') {
+    target.color.copy(band).lerp(MASTERY_SELECTED, 0.15)
+    target.emissiveIntensity = 0.22
+    return
+  }
+  if (visual === 'emphasized') target.emissiveIntensity = 0.16
+  if (visual === 'subdued') {
+    target.color.copy(band).multiplyScalar(0.4)
+    target.emissiveIntensity = 0.02
+  }
+  if (visual === 'ghost') {
+    target.color.copy(band).multiplyScalar(0.12)
+    target.emissiveIntensity = 0
+  }
+}
+
+function writePaint(
+  target: Paint,
+  base: Color,
+  baseRoughness: number,
+  visual: BoneVisual,
+  look: LookName,
+  boneId: string | undefined,
+): void {
+  if (look === 'mastery') {
+    writeMastery(target, visual, boneId)
+    return
+  }
   if (look === 'ivory') {
     writeIvory(target, base, visual)
     return
@@ -122,17 +164,17 @@ function assign(material: MeshStandardMaterial, paint: Paint): void {
   material.roughness = paint.roughness
 }
 
-export function applyVisual(material: MeshStandardMaterial, visual: BoneVisual): void {
+export function applyVisual(material: MeshStandardMaterial, visual: BoneVisual, boneId?: string): void {
   const base = material.userData.baseColor as Color | undefined
   if (!base) return
   const roughness = (material.userData.baseRoughness as number | undefined) ?? 0.55
   const sample = lookPaint()
-  writePaint(scratchA, base, roughness, visual, sample.look)
+  writePaint(scratchA, base, roughness, visual, sample.look, boneId)
   if (sample.blend >= 1 || sample.from === sample.look) {
     assign(material, scratchA)
     return
   }
-  writePaint(scratchB, base, roughness, visual, sample.from)
+  writePaint(scratchB, base, roughness, visual, sample.from, boneId)
   material.color.copy(scratchB.color).lerp(scratchA.color, sample.blend)
   material.emissive.copy(scratchB.emissive).lerp(scratchA.emissive, sample.blend)
   material.emissiveIntensity =

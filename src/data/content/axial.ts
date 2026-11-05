@@ -82,8 +82,10 @@ export const axialBones: Bone[] = [
       {
         suffix: 'dens',
         name: 'Dens',
-        description: 'The odontoid process, a superior projection from the body that is held against the anterior arch of the atlas by the transverse ligament.',
-        significance: 'Fracture of the dens can threaten the spinal cord because the process lies against the medulla-cord junction.',
+        description:
+          'The odontoid process, a superior projection from the body that is held against the anterior arch of the atlas by the transverse ligament.',
+        significance:
+          'Fracture of the dens can threaten the spinal cord because the process lies against the medulla-cord junction.',
         anchor: [0.5, 0.96, 0.62],
       },
       {
@@ -141,7 +143,8 @@ export const axialBones: Bone[] = [
       {
         suffix: 'prominens',
         name: 'Vertebra prominens',
-        description: 'The long spinous process of C7, the first spinous process that is easily felt at the base of the neck.',
+        description:
+          'The long spinous process of C7, the first spinous process that is easily felt at the base of the neck.',
         mesh: 'Cervical vertebrae (C7)',
         anchor: [0.5, 0.35, 0.02],
       },
@@ -224,14 +227,16 @@ export const axialBones: Bone[] = [
       {
         suffix: 'transverse',
         name: 'Transverse process',
-        description: 'A long, slender lateral process. The lumbar transverse processes have no foramina and no rib facets.',
+        description:
+          'A long, slender lateral process. The lumbar transverse processes have no foramina and no rib facets.',
         mesh: 'Lumbar vertebrae (L3)',
         anchor: [0.04, 0.55, 0.4],
       },
       {
         suffix: 'mammillary',
         name: 'Mammillary process',
-        description: 'A small tubercle on the posterior margin of the superior articular process, an attachment for multifidus.',
+        description:
+          'A small tubercle on the posterior margin of the superior articular process, an attachment for multifidus.',
         mesh: 'Lumbar vertebrae (L2)',
         anchor: [0.22, 0.82, 0.35],
       },
@@ -261,7 +266,8 @@ export const axialBones: Bone[] = [
       {
         suffix: 'ala',
         name: 'Ala',
-        description: 'The wing on each side of the first sacral body, formed from fused costal and transverse elements.',
+        description:
+          'The wing on each side of the first sacral body, formed from fused costal and transverse elements.',
         anchor: [0.12, 0.78, 0.55],
       },
       {
@@ -351,7 +357,8 @@ export const axialBones: Bone[] = [
       {
         suffix: 'angle',
         name: 'Sternal angle',
-        description: 'The palpable joint between the manubrium and the body. The second costal cartilage meets the sternum here, so it is the starting point for counting ribs.',
+        description:
+          'The palpable joint between the manubrium and the body. The second costal cartilage meets the sternum here, so it is the starting point for counting ribs.',
         mesh: 'Manubrium of sternum',
         anchor: [0.5, 0.06, 0.85],
       },
@@ -365,7 +372,8 @@ export const axialBones: Bone[] = [
       {
         suffix: 'xiphoid',
         name: 'Xiphoid process',
-        description: 'The small inferior tip. It is cartilaginous in young people and usually ossifies and fuses with the body in later life.',
+        description:
+          'The small inferior tip. It is cartilaginous in young people and usually ossifies and fuses with the body in later life.',
         mesh: 'Body of sternum',
         anchor: [0.5, 0.04, 0.7],
       },
@@ -389,7 +397,8 @@ export const axialBones: Bone[] = [
       {
         suffix: 'head',
         name: 'Head',
-        description: 'The posterior end, shown here on the sixth rib. It carries facets for the bodies of two adjacent thoracic vertebrae.',
+        description:
+          'The posterior end, shown here on the sixth rib. It carries facets for the bodies of two adjacent thoracic vertebrae.',
         mesh: 'Rib (6th).r',
         bothSides: true,
         anchor: [0.08, 0.85, 0.15],
@@ -413,7 +422,8 @@ export const axialBones: Bone[] = [
       {
         suffix: 'shaft',
         name: 'Shaft',
-        description: 'The long curved body. Its internal surface is marked by the costal groove for the intercostal vein, artery, and nerve.',
+        description:
+          'The long curved body. Its internal surface is marked by the costal groove for the intercostal vein, artery, and nerve.',
         mesh: 'Rib (6th).r',
         bothSides: true,
         anchor: [0.55, 0.4, 0.72],

@@ -20,6 +20,7 @@ const LOOKS: Array<{ id: LookName; label: string }> = [
   { id: 'atlas', label: 'Atlas' },
   { id: 'ivory', label: 'Ivory' },
   { id: 'radiograph', label: 'Radiograph' },
+  { id: 'mastery', label: 'Mastery' },
 ]
 
 const SECTIONS: Array<{ id: SectionAxis; label: string }> = [
@@ -97,64 +98,77 @@ export function ViewerControls({ container }: { container: RefObject<HTMLDivElem
       <p className="kicker pointer-events-none hidden sm:block">Drag rotate · scroll zoom · right-drag pan</p>
       <div className="pointer-events-auto flex max-w-full flex-col gap-1 overflow-x-auto rounded-lg border bg-card/80 p-1 backdrop-blur-sm">
         <div className="flex items-center gap-1">
-        <ButtonGroup>
-          {VIEWS.map((view) => (
-            <Hint key={view.id} label={view.id === 'default' ? 'Reset camera' : `${view.label} view`} shortcut={view.shortcut}>
-              <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => requestPreset(view.id)}>
-                {view.label}
+          <ButtonGroup>
+            {VIEWS.map((view) => (
+              <Hint
+                key={view.id}
+                label={view.id === 'default' ? 'Reset camera' : `${view.label} view`}
+                shortcut={view.shortcut}
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => requestPreset(view.id)}
+                >
+                  {view.label}
+                </Button>
+              </Hint>
+            ))}
+          </ButtonGroup>
+          <Separator orientation="vertical" className="mx-1 h-4" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="ghost" size="sm" className="shrink-0">
+                Visibility
               </Button>
-            </Hint>
-          ))}
-        </ButtonGroup>
-        <Separator orientation="vertical" className="mx-1 h-4" />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" variant="ghost" size="sm" className="shrink-0">
-              Visibility
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuLabel>Skeleton layers</DropdownMenuLabel>
+              <DropdownMenuCheckboxItem checked={showBones} onCheckedChange={(value) => setShowBones(value === true)}>
+                Bones
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={showLabels} onCheckedChange={(value) => setShowLabels(value === true)}>
+                Labels
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={showLandmarks}
+                onCheckedChange={(value) => setShowLandmarks(value === true)}
+              >
+                Landmarks
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Hint label={isolated ? 'Show the full skeleton' : 'Isolate the selection'} shortcut="I">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
+              disabled={!selectedBoneId}
+              onClick={() => (isolated ? clearIsolation() : toggleIsolate())}
+            >
+              {isolated ? 'Full skeleton' : 'Isolate'}
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-44">
-            <DropdownMenuLabel>Skeleton layers</DropdownMenuLabel>
-            <DropdownMenuCheckboxItem checked={showBones} onCheckedChange={(value) => setShowBones(value === true)}>
-              Bones
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem checked={showLabels} onCheckedChange={(value) => setShowLabels(value === true)}>
-              Labels
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem checked={showLandmarks} onCheckedChange={(value) => setShowLandmarks(value === true)}>
-              Landmarks
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Hint label={isolated ? 'Show the full skeleton' : 'Isolate the selection'} shortcut="I">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="shrink-0"
-            disabled={!selectedBoneId}
-            onClick={() => (isolated ? clearIsolation() : toggleIsolate())}
-          >
-            {isolated ? 'Full skeleton' : 'Isolate'}
-          </Button>
-        </Hint>
-        <Hint label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon-sm"
-            className="shrink-0"
-            aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-            onClick={toggleFullscreen}
-          >
-            {fullscreen ? <Minimize2 /> : <Maximize2 />}
-          </Button>
-        </Hint>
+          </Hint>
+          <Hint label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              className="shrink-0"
+              aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+              onClick={toggleFullscreen}
+            >
+              {fullscreen ? <Minimize2 /> : <Maximize2 />}
+            </Button>
+          </Hint>
         </div>
         <div className="flex items-center gap-1">
           <ButtonGroup aria-label="Look">
             {LOOKS.map((item) => (
-              <Hint key={item.id} label={`${item.label} look`} shortcut={item.id === 'atlas' ? '1' : item.id === 'ivory' ? '2' : '3'}>
+              <Hint key={item.id} label={`${item.label} look`} shortcut={String(LOOKS.indexOf(item) + 1)}>
                 <Button
                   type="button"
                   variant={look === item.id ? 'default' : 'ghost'}

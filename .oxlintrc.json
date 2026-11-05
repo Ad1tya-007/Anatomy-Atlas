@@ -1,0 +1,54 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y", "import", "vitest"],
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/react-in-jsx-scope": "off",
+    // React Three Fiber props such as `args`, `attach`, and `intensity` are not DOM attributes.
+    "react/no-unknown-property": "off",
+    // three.js objects are mutated in place every frame by design. This rule assumes immutable React data.
+    "react/immutability": "off",
+    // The combobox, listbox, and group roles follow the WAI-ARIA patterns on purpose.
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "import/no-cycle": "error",
+    "import/no-unassigned-import": [
+      "warn",
+      { "allow": ["**/*.css", "@testing-library/jest-dom/vitest", "fake-indexeddb/auto"] }
+    ],
+    "typescript/no-explicit-any": "error",
+    "vitest/valid-expect": ["error", { "maxArgs": 2 }],
+    "vitest/expect-expect": ["error", { "assertFunctionNames": ["expect", "expectValidChoices"] }],
+    "no-console": ["warn", { "allow": ["warn", "error"] }]
+  },
+  "overrides": [
+    {
+      // Generated shadcn/ui components. Keep them close to upstream so they stay easy to update.
+      "files": ["src/components/ui/**"],
+      "rules": {
+        "jsx-a11y/click-events-have-key-events": "off",
+        "jsx-a11y/no-noninteractive-element-interactions": "off",
+        "no-underscore-dangle": "off"
+      }
+    },
+    {
+      // Command-line scripts report to the terminal.
+      "files": ["scripts/**", "evals/**"],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ],
+  "settings": {
+    "react": { "version": "19" }
+  },
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "test-results", "public/draco"]
+}

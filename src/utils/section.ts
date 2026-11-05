@@ -29,7 +29,13 @@ export function writeSectionPlane(target: Plane, box: Box3, axis: SectionAxis, a
   return true
 }
 
-export function sectionRemovesPoint(point: Vector3, box: Box3, axis: SectionAxis, amount: number, plane: Plane): boolean {
+export function sectionRemovesPoint(
+  point: Vector3,
+  box: Box3,
+  axis: SectionAxis,
+  amount: number,
+  plane: Plane,
+): boolean {
   if (!writeSectionPlane(plane, box, axis, amount)) return false
   return plane.distanceToPoint(point) < -0.0008
 }

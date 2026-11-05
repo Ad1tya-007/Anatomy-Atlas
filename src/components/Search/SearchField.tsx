@@ -27,9 +27,10 @@ export function SearchField() {
   const frameRegion = useAnatomyStore((state) => state.frameRegion)
   const results = useMemo(() => searchAnatomy(query), [query])
 
-  useEffect(() => {
+  const changeQuery = (value: string) => {
+    setQuery(value)
     setActive(0)
-  }, [query])
+  }
 
   useEffect(() => {
     const onPointer = (event: PointerEvent) => {
@@ -45,7 +46,7 @@ export function SearchField() {
     else if (result.kind === 'walk' && result.walkId) startWalk(result.walkId)
     else if (result.boneId) selectBone(result.boneId, { landmarkId: result.landmarkId ?? null })
     setOpen(false)
-    setQuery('')
+    changeQuery('')
   }
 
   return (
@@ -68,7 +69,7 @@ export function SearchField() {
           placeholder="Search bones, joints, walks…"
           className="h-9 text-sm"
           onChange={(event) => {
-            setQuery(event.target.value)
+            changeQuery(event.target.value)
             setOpen(true)
           }}
           onFocus={() => setOpen(true)}
@@ -91,7 +92,14 @@ export function SearchField() {
         />
         <InputGroupAddon align="inline-end">
           {query ? (
-            <InputGroupButton size="icon-xs" aria-label="Clear search" onClick={() => { setQuery(''); setOpen(false) }}>
+            <InputGroupButton
+              size="icon-xs"
+              aria-label="Clear search"
+              onClick={() => {
+                changeQuery('')
+                setOpen(false)
+              }}
+            >
               <X />
             </InputGroupButton>
           ) : (

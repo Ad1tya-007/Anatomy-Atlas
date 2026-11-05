@@ -1,4 +1,4 @@
-import { AnatomyScene } from '@/components/three/AnatomyScene/AnatomyScene'
+import { MasteryLegend } from '@/components/MasteryLegend/MasteryLegend'
 import { ModelErrorBoundary } from '@/components/ModelErrorBoundary'
 import { StudyCard } from '@/components/StudyMode/StudyMode'
 import { WalkCard } from '@/components/WalkCard/WalkCard'
@@ -7,8 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Spinner } from '@/components/ui/spinner'
 import { getBone } from '@/data/bones'
+import { useMasteryByBone } from '@/features/srs/useMastery'
 import { useAnatomyStore } from '@/store/anatomyStore'
-import { useRef } from 'react'
+import { lazy, Suspense, useRef } from 'react'
+
+// three.js, R3F, and drei are most of the JavaScript; the request starts with the app bundle instead of at first render.
+const sceneModule = import('@/components/three/AnatomyScene/AnatomyScene')
+const AnatomyScene = lazy(() => sceneModule.then((module) => ({ default: module.AnatomyScene })))
 
 export function Viewer() {
   const container = useRef<HTMLDivElement>(null)
@@ -21,22 +26,29 @@ export function Viewer() {
   const studyRevealed = useAnatomyStore((state) => state.studyRevealed)
   const studyAnswerMode = useAnatomyStore((state) => state.studyAnswerMode)
   const hasSelected = useAnatomyStore((state) => state.hasSelected)
+  const look = useAnatomyStore((state) => state.look)
+  const mastery = useMasteryByBone()
   const hoverName = getBone(hoveredBoneId)?.displayName
+  const hoverRecall = look === 'mastery' && hoveredBoneId ? mastery.get(hoveredBoneId) : undefined
   const hideHover = studyMode && !studyRevealed && studyAnswerMode !== 'locate'
   const showHover = Boolean(hoverName && hoveredBoneId !== selectedBoneId && !hideHover)
 
   return (
     <div
       ref={container}
+      data-model-state={modelState}
       className={`relative min-h-0 min-w-0 flex-1 bg-background [&:fullscreen]:h-screen [&:fullscreen]:w-screen ${
         hoveredBoneId ? '[&_canvas]:cursor-pointer' : ''
       }`}
     >
       <p id="viewer-desc" className="sr-only">
-        Interactive 3D skeleton. Drag to rotate, scroll to zoom, and click a bone. The same structures are listed in the anatomy navigator.
+        Interactive 3D skeleton. Drag to rotate, scroll to zoom, and click a bone. The same structures are listed in the
+        anatomy navigator.
       </p>
       <ModelErrorBoundary resetKey={retryKey}>
-        <AnatomyScene />
+        <Suspense fallback={null}>
+          <AnatomyScene />
+        </Suspense>
       </ModelErrorBoundary>
       <div className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(circle_at_center,transparent_42%,rgb(0_0_0/0.42)_100%)]" />
       {modelState === 'loading' ? (
@@ -70,6 +82,11 @@ export function Viewer() {
       {showHover ? (
         <div className="pointer-events-none absolute top-4 left-4 z-10 rounded-lg border bg-card/92 px-2.5 py-1 text-[13px]">
           {hoverName}
+          {look === 'mastery' ? (
+            <span className="ml-2 font-mono text-[11px] text-muted-foreground">
+              {hoverRecall === undefined ? 'not studied' : `${Math.round(hoverRecall * 100)}% recall`}
+            </span>
+          ) : null}
         </div>
       ) : null}
       {modelState === 'ready' && !hasSelected ? (
@@ -77,6 +94,7 @@ export function Viewer() {
           Select a bone
         </p>
       ) : null}
+      {modelState === 'ready' ? <MasteryLegend /> : null}
       {modelState !== 'error' ? <ViewerControls container={container} /> : null}
       <StudyCard />
       <WalkCard />

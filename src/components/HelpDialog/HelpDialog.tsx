@@ -16,6 +16,7 @@ const SHORTCUTS = [
   ['1', 'Atlas look'],
   ['2', 'Ivory look'],
   ['3', 'Radiograph look'],
+  ['4', 'Mastery look'],
   ['X', 'Cycle section'],
   [',', 'Move the section toward the start side'],
   ['.', 'Move the section toward the far side'],
@@ -45,7 +46,15 @@ export function HelpDialog() {
               <li>Study mode can be limited to a region or a classification, and answered by choosing or typing.</li>
               <li>Walks step through a fixed path. Exit leaves the last structure selected.</li>
               <li>Atlas, Ivory, and Radiograph change the light, not the anatomy.</li>
-              <li>Section keeps one side of a sagittal, coronal, or transverse cut. The slider uses the skeleton’s own left, anterior, and superior.</li>
+              <li>Mastery colors each bone by how likely you are to remember it, from your own study history.</li>
+              <li>
+                Review asks the questions that are due on your spaced-repetition schedule. Practice picks at random.
+                Both count toward your progress.
+              </li>
+              <li>
+                Section keeps one side of a sagittal, coronal, or transverse cut. The slider uses the skeleton’s own
+                left, anterior, and superior.
+              </li>
               <li>Spread separates regions and returns them. Section and Spread do not run together.</li>
               <li>Connection lines join the selected bone to the other bones in its joints.</li>
               <li>Locate asks for a click on the named structure. Hover still names bones so you can aim.</li>
@@ -65,7 +74,10 @@ export function HelpDialog() {
             <h3 className="kicker">Keyboard</h3>
             <ul className="mt-2">
               {SHORTCUTS.map(([key, label]) => (
-                <li key={key} className="flex items-center justify-between gap-4 border-b py-1.5 text-muted-foreground last:border-0">
+                <li
+                  key={key}
+                  className="flex items-center justify-between gap-4 border-b py-1.5 text-muted-foreground last:border-0"
+                >
                   <span>{label}</span>
                   <Kbd>{key}</Kbd>
                 </li>
@@ -76,16 +88,25 @@ export function HelpDialog() {
           <section>
             <h3 className="kicker">Orientation</h3>
             <p className="mt-2 text-muted-foreground">
-              The corner gizmo uses anatomical directions: S superior, I inferior, A anterior, P posterior, L the skeleton’s left, R the skeleton’s right. In a front view, the skeleton’s left is on your right.
+              The corner gizmo uses anatomical directions: S superior, I inferior, A anterior, P posterior, L the
+              skeleton’s left, R the skeleton’s right. In a front view, the skeleton’s left is on your right.
             </p>
           </section>
           <Separator />
           <section>
             <h3 className="kicker">Model credit</h3>
             <p className="mt-2 text-muted-foreground">
-              Skeleton geometry is the Open3DModel by the Open3D project, George J.R. Maat, LUMC, Eungyeol Lee, LUMC, and contributors, licensed CC BY-SA. It is based on BodyParts3D and Z-Anatomy. The right-sided bones in the source file are mirrored here to show the left side.
+              Skeleton geometry is the Open3DModel by the Open3D project, George J.R. Maat, LUMC, Eungyeol Lee, LUMC,
+              and contributors, licensed CC BY-SA. It is based on BodyParts3D and Z-Anatomy. The right-sided bones in
+              the source file are mirrored here to show the left side. Thirty-eight 1024×1024 normal maps were downsized
+              to 512×512; the geometry is unchanged.
             </p>
-            <a className="mt-2 inline-block text-primary underline-offset-4 hover:underline" href="https://anatomytool.org/open3dmodel" target="_blank" rel="noreferrer">
+            <a
+              className="mt-2 inline-block text-primary underline-offset-4 hover:underline"
+              href="https://anatomytool.org/open3dmodel"
+              target="_blank"
+              rel="noreferrer"
+            >
               anatomytool.org/open3dmodel
             </a>
           </section>

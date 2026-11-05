@@ -257,7 +257,12 @@ export function AnatomyInfoPanel({ className, id }: { className?: string; id?: s
                 </section>
               ) : null}
               {bone.partOf ? (
-                <Button type="button" variant="link" className="mt-4 h-auto px-0" onClick={() => selectBone(bone.partOf!)}>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="mt-4 h-auto px-0"
+                  onClick={() => selectBone(bone.partOf!)}
+                >
                   Part of {getBone(bone.partOf)?.name}
                 </Button>
               ) : null}

@@ -3,7 +3,7 @@ import { ConnectionLines } from '@/components/three/ConnectionLines/ConnectionLi
 import { BoneLabel, LandmarkLayer } from '@/components/three/LandmarkMarker/LandmarkMarker'
 import { buildSkeleton, MODEL_OFFSET_Y, type SkeletonIndex } from '@/components/three/skeletonIndex'
 import { useAnatomyStore } from '@/store/anatomyStore'
-import { computeFocus, computeGroupFocus } from '@/utils/camera'
+import { computeFocus, computeGroupFocus } from '@/components/three/focus'
 import { writeSectionPlane } from '@/utils/section'
 import { beginArrival } from '@/utils/specimenMotion'
 import { selectionHighlight, visualFor } from '@/utils/anatomy'
@@ -27,18 +27,27 @@ function SelectionFocus({ index }: { index: SkeletonIndex }) {
     () => selectionHighlight({ selectedBoneId, selectedJointId, jointSide, compareSides }),
     [compareSides, jointSide, selectedBoneId, selectedJointId],
   )
-  const frameKey = [...highlight.selectedIds].sort().join('|')
-
   useEffect(() => {
     if (!selectedBoneId) return
+    const restored = useAnatomyStore.getState().takeRestoreCamera()
+    if (restored) {
+      focusCamera(restored.position, restored.target)
+      return
+    }
     if (highlight.group) {
-      const focus = computeGroupFocus(index, [...highlight.selectedIds], selectedBoneId, compareSides ? 1.18 : 1, spread)
+      const focus = computeGroupFocus(
+        index,
+        [...highlight.selectedIds],
+        selectedBoneId,
+        compareSides ? 1.18 : 1,
+        spread,
+      )
       if (focus) focusCamera(focus.position, focus.target)
       return
     }
     const focus = computeFocus(index, selectedBoneId, selectedLandmarkId, spread)
     if (focus) focusCamera(focus.position, focus.target)
-  }, [compareSides, focusCamera, frameKey, highlight, index, selectedBoneId, selectedLandmarkId, spread])
+  }, [compareSides, focusCamera, highlight, index, selectedBoneId, selectedLandmarkId, spread])
 
   return null
 }
@@ -112,11 +121,7 @@ export function SkeletonModel() {
     <>
       <group position={[0, MODEL_OFFSET_Y, 0]}>
         {built.instances.map((instance) => (
-          <BoneMesh
-            key={instance.key}
-            instance={instance}
-            visual={visualFor(instance.boneId, visuals)}
-          />
+          <BoneMesh key={instance.key} instance={instance} visual={visualFor(instance.boneId, visuals)} />
         ))}
       </group>
       <SelectionFocus index={built.index} />

@@ -1,7 +1,7 @@
 import type { SkeletonIndex } from '@/components/three/skeletonIndex'
 import { getJoint, isPairedJoint, jointsForBone, resolveJointBones } from '@/data/joints'
 import { useAnatomyStore } from '@/store/anatomyStore'
-import { boundsForBone } from '@/utils/camera'
+import { boundsForBone } from '@/components/three/focus'
 import { sectionRemovesPoint } from '@/utils/section'
 import { spreadNow } from '@/utils/specimenMotion'
 import { spreadOffsetForId } from '@/utils/spread'
@@ -46,16 +46,12 @@ export function ConnectionLines({ index, bounds }: { index: SkeletonIndex; bound
   const sectionAxis = useAnatomyStore((state) => state.sectionAxis)
   const sectionAmount = useAnatomyStore((state) => state.sectionAmount)
   const look = useAnatomyStore((state) => state.look)
-  const geometry = useMemo(() => new BufferGeometry(), [])
   const positions = useMemo(() => new BufferAttribute(new Float32Array(96), 3), [])
+  const geometry = useMemo(() => new BufferGeometry().setAttribute('position', positions), [positions])
   const material = useMemo(() => new LineBasicMaterial({ color: '#e7d7c3', transparent: true, opacity: 0.55 }), [])
   const plane = useMemo(() => new Plane(), [])
   const origin = useMemo(() => new Vector3(), [])
   const end = useMemo(() => new Vector3(), [])
-
-  useMemo(() => {
-    geometry.setAttribute('position', positions)
-  }, [geometry, positions])
 
   useFrame(() => {
     const hidden = !selectedBoneId || (studyMode && !studyRevealed)

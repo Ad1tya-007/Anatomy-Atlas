@@ -2,14 +2,7 @@ import { contralateralId, getBone } from '@/data/bones'
 import { getJoint, isPairedJoint, resolveJointBones } from '@/data/joints'
 import type { BoneClassification } from '@/types/anatomy'
 
-export type BoneVisual =
-  | 'hidden'
-  | 'ghost'
-  | 'selected'
-  | 'hover'
-  | 'emphasized'
-  | 'subdued'
-  | 'default'
+export type BoneVisual = 'hidden' | 'ghost' | 'selected' | 'hover' | 'emphasized' | 'subdued' | 'default'
 
 export function highlightedIds(selectedBoneId: string | null): Set<string> {
   if (!selectedBoneId) return new Set()

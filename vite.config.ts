@@ -1,13 +1,107 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { loadEnv, type Plugin } from 'vite'
+import { defineConfig } from 'vitest/config'
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
+/**
+ * Exposes the Supabase URL and anon key to the client under either their VITE_ or plain names. Only these two
+ * values are forwarded; a `SUPABASE_` env prefix would also expose the service-role key. Tests always run as a guest.
+ */
+function supabaseEnv(mode: string): Record<string, string> {
+  if (mode === 'test') return {}
+  const env = loadEnv(mode, process.cwd(), '')
+  const url = env.VITE_SUPABASE_URL || env.SUPABASE_URL || ''
+  const key = env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || env.SUPABASE_PUBLISHABLE_KEY || ''
+  return {
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(url),
+    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(key),
+  }
+}
+
+/**
+ * Serves /api/tutor from the dev server. The handler is loaded through Vite, so edits apply without a restart.
+ * The AI Gateway client reads its credentials from process.env, so those two values are copied from .env.local.
+ */
+function tutorApi(): Plugin {
+  return {
+    name: 'atlas:tutor-api',
+    apply: 'serve',
+    configureServer(server) {
+      const env = loadEnv(server.config.mode, process.cwd(), '')
+      for (const key of ['AI_GATEWAY_API_KEY', 'VERCEL_OIDC_TOKEN']) {
+        if (env[key]) process.env[key] ??= env[key]
+      }
+      server.middlewares.use('/api/tutor', (req, res, next) => {
+        server
+          .ssrLoadModule('/src/server/tutor/nodeHandler.ts')
+          .then((module) => module.handleNodeTutorRequest(req, res, env))
+          .catch(next)
+      })
+    },
+  }
+}
+
+/**
+ * The viewer imports the 3D scene dynamically so the shell renders first, but the scene is always needed: preload it
+ * from the HTML so it downloads alongside the app bundle instead of after it runs.
+ */
+function preloadScene(): Plugin {
+  return {
+    name: 'atlas-preload-scene',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_html, context) {
+        const chunk = Object.values(context.bundle ?? {}).find(
+          (output) => output.type === 'chunk' && output.isDynamicEntry && output.name === 'AnatomyScene',
+        )
+        if (chunk?.type !== 'chunk') return []
+        const loaded = new Set([context.chunk?.fileName, ...(context.chunk?.imports ?? [])])
+        const files = [chunk.fileName, ...chunk.imports.filter((file) => !loaded.has(file))]
+        return files.map((file) => ({
+          tag: 'link',
+          attrs: { rel: 'modulepreload', crossorigin: true, href: `/${file}`, 'data-scene': true },
+          injectTo: 'head' as const,
+        }))
+      },
+    },
+  }
+}
+
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), tailwindcss(), preloadScene(), ...(mode === 'test' ? [] : [tutorApi()])],
+  define: supabaseEnv(mode),
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-})
+  test: {
+    include: ['src/**/*.test.{ts,tsx}'],
+    environment: 'node',
+    setupFiles: ['./src/test/setup.ts'],
+    restoreMocks: true,
+    // Day boundaries (streaks, daily limits) depend on the time zone.
+    env: { TZ: 'UTC' },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'text', 'html', 'lcov', 'json-summary'],
+      include: ['src/features/**', 'src/utils/**', 'src/data/**', 'src/store/**', 'src/server/**'],
+      // Entry points and the demo model are exercised by the Vercel smoke test and the dev server, not unit tests.
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        'src/server/vercel/**',
+        'src/server/tutor/nodeHandler.ts',
+        'src/server/tutor/demoModel.ts',
+      ],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 60,
+        statements: 70,
+        'src/features/study/**': { lines: 90, functions: 90, branches: 85, statements: 90 },
+      },
+    },
+  },
+}))

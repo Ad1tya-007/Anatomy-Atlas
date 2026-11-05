@@ -1,11 +1,26 @@
+import { AccountButton } from '@/components/AccountButton/AccountButton'
 import { SearchField } from '@/components/Search/SearchField'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { getBone } from '@/data/bones'
 import { getJoint } from '@/data/joints'
 import { getLandmark } from '@/data/landmarks'
+import { currentViewUrl } from '@/hooks/useUrlSync'
 import { useAnatomyStore } from '@/store/anatomyStore'
-import { BookOpen, CircleHelp } from 'lucide-react'
+import { BarChart3, BookOpen, CircleHelp, Link2 } from 'lucide-react'
+import { lazy, Suspense, useState } from 'react'
+import { toast } from 'sonner'
+
+const ProgressDialog = lazy(() => import('@/components/ProgressDialog/ProgressDialog'))
+
+async function copyViewLink(): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(currentViewUrl())
+    toast.success('Link copied', { description: 'Anyone with the link opens this exact view.' })
+  } catch {
+    toast.error('Could not copy the link', { description: 'Copy it from the address bar instead.' })
+  }
+}
 
 export function Header() {
   const studyMode = useAnatomyStore((state) => state.studyMode)
@@ -16,6 +31,8 @@ export function Header() {
   const enterStudy = useAnatomyStore((state) => state.enterStudy)
   const exitStudy = useAnatomyStore((state) => state.exitStudy)
   const setHelpOpen = useAnatomyStore((state) => state.setHelpOpen)
+  const [progressOpen, setProgressOpen] = useState(false)
+  const [progressLoaded, setProgressLoaded] = useState(false)
   const hideName = studyMode && !studyRevealed
   const readout = hideName
     ? null
@@ -36,7 +53,9 @@ export function Header() {
         </div>
       </div>
       {readout ? (
-        <p className="hidden min-w-0 max-w-[14rem] truncate font-specimen text-[15px] leading-none lg:block">{readout}</p>
+        <p className="hidden min-w-0 max-w-[14rem] truncate font-specimen text-[15px] leading-none lg:block">
+          {readout}
+        </p>
       ) : null}
       <div className="min-w-0 flex-1">
         <div className="mx-auto w-full max-w-xl">
@@ -56,17 +75,62 @@ export function Header() {
               <span className="hidden sm:inline">{studyMode ? 'Exit study' : 'Study'}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{studyMode ? 'Leave the current sitting' : 'Practice naming bones and landmarks'}</TooltipContent>
+          <TooltipContent>
+            {studyMode ? 'Leave the current sitting' : 'Practice naming bones and landmarks'}
+          </TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button type="button" variant="outline" size="icon" aria-label="Open controls guide" onClick={() => setHelpOpen(true)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Open your progress"
+              onClick={() => {
+                setProgressLoaded(true)
+                setProgressOpen(true)
+              }}
+            >
+              <BarChart3 />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Progress and mastery</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Copy link to this view"
+              onClick={copyViewLink}
+            >
+              <Link2 />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Copy link to this view</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Open controls guide"
+              onClick={() => setHelpOpen(true)}
+            >
               <CircleHelp />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Controls</TooltipContent>
         </Tooltip>
+        <AccountButton />
       </div>
+      {progressLoaded ? (
+        <Suspense fallback={null}>
+          <ProgressDialog open={progressOpen} onOpenChange={setProgressOpen} />
+        </Suspense>
+      ) : null}
     </header>
   )
 }

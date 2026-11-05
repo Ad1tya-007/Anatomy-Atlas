@@ -1,11 +1,5 @@
 export type AnatomicalRegion =
-  | 'head'
-  | 'vertebral-column'
-  | 'thorax'
-  | 'shoulder-girdle'
-  | 'upper-limb'
-  | 'pelvis'
-  | 'lower-limb'
+  'head' | 'vertebral-column' | 'thorax' | 'shoulder-girdle' | 'upper-limb' | 'pelvis' | 'lower-limb'
 
 export type BoneClassification = 'long' | 'short' | 'flat' | 'irregular' | 'sesamoid'
 
@@ -77,6 +71,11 @@ export type CameraPresetName = 'default' | 'front' | 'back' | 'left' | 'right' |
 
 export type Vec3 = [number, number, number]
 
+export interface CameraPose {
+  position: Vec3
+  target: Vec3
+}
+
 export interface CameraRequest {
   id: number
   kind: 'preset' | 'focus'
@@ -95,7 +94,10 @@ export interface StudyQuestion {
 
 export type ModelState = 'loading' | 'ready' | 'error'
 
-export type MobilePanel = 'none' | 'nav' | 'info'
+export type MobilePanel = 'none' | 'nav' | 'info' | 'tutor'
+
+/** The desktop panel on the right: structure details or the tutor chat. */
+export type SidePanel = 'details' | 'tutor'
 
 export interface Joint {
   id: string
@@ -128,11 +130,29 @@ export type StudyScope = 'all' | 'region' | 'classification'
 
 export type StudyAnswerMode = 'reveal' | 'choice' | 'type' | 'locate'
 
-export type LookName = 'atlas' | 'ivory' | 'radiograph'
+/** Practice picks at random. Review follows the spaced-repetition schedule. */
+export type StudyQueue = 'practice' | 'review'
+
+export type LookName = 'atlas' | 'ivory' | 'radiograph' | 'mastery'
 
 export type SectionAxis = 'off' | 'sagittal' | 'coronal' | 'transverse'
 
 export type StudyResult = 'correct' | 'incorrect'
+
+/** The shareable part of the viewer state. Every field is optional so partial links still restore. */
+export interface ViewState {
+  boneId?: string
+  landmarkId?: string
+  jointId?: string
+  jointSide?: 'left' | 'right'
+  look?: LookName
+  sectionAxis?: Exclude<SectionAxis, 'off'>
+  sectionAmount?: number
+  spread?: number
+  walkId?: string
+  walkIndex?: number
+  camera?: CameraPose
+}
 
 export interface SelectBoneOptions {
   landmarkId?: string | null

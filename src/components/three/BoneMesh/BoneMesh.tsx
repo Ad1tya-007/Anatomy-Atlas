@@ -14,7 +14,7 @@ function BoneMeshComponent({ instance, visual }: { instance: MeshInstance; visua
   const ref = useRef<Mesh>(null)
 
   const place = () => {
-    applyVisual(instance.material, visual)
+    applyVisual(instance.material, visual, instance.boneId)
     const offset = spreadOffsetForId(instance.boneId, spreadNow())
     ref.current?.position.set(offset[0], offset[1], offset[2])
   }

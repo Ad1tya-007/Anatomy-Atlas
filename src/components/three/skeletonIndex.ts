@@ -129,7 +129,12 @@ function frameFor(bone: Bone, landmark: Landmark): AnchorFrame {
   return bone.anchorFrame
 }
 
-function pointOnBox(box: Box3, landmark: Landmark, frame: AnchorFrame, side: Side): { point: Vector3; normal: Vector3 } {
+function pointOnBox(
+  box: Box3,
+  landmark: Landmark,
+  frame: AnchorFrame,
+  side: Side,
+): { point: Vector3; normal: Vector3 } {
   let u = landmark.anchor.x
   if (frame === 'side' && side === 'right') u = 1 - landmark.anchor.x
   const point = new Vector3(

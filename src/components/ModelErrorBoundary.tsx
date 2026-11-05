@@ -8,23 +8,23 @@ interface Props {
 
 interface State {
   failed: boolean
+  resetKey: number
 }
 
 export class ModelErrorBoundary extends Component<Props, State> {
-  state: State = { failed: false }
+  state: State = { failed: false, resetKey: this.props.resetKey }
 
-  static getDerivedStateFromError(): State {
+  static getDerivedStateFromError(): Partial<State> {
     return { failed: true }
+  }
+
+  static getDerivedStateFromProps(props: Props, state: State): Partial<State> | null {
+    if (props.resetKey === state.resetKey) return null
+    return { failed: false, resetKey: props.resetKey }
   }
 
   componentDidCatch(): void {
     useAnatomyStore.getState().setModelState('error')
-  }
-
-  componentDidUpdate(previous: Props): void {
-    if (previous.resetKey !== this.props.resetKey && this.state.failed) {
-      this.setState({ failed: false })
-    }
   }
 
   render(): ReactNode {
